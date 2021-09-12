@@ -1,0 +1,33 @@
+executable("broker") {
+  sources = [
+    "broker/algobroker.cc",
+    "broker/algobroker.h",
+  ]
+
+  defines = [ "ALGO_BROKER_EXPORTS" ]
+
+  deps = [
+    "//base",
+    "//sandbox/linux:sandbox",
+    "//sandbox/policy",
+  ]
+
+  output_name = "algobroker.netcore"
+}
+
+executable("host") {
+  sources = [
+    "host/algohost.cc",
+    "host/algohost.h",
+  ]
+
+  defines = [ "ALGO_BROKER_EXPORTS" ]
+
+  deps = [
+    "//base",
+    "//sandbox/linux:sandbox",
+    "//sandbox/policy",
+  ]
+
+  output_name = "algohost.netcore"
+}
