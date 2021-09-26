@@ -23,42 +23,6 @@ int main(int argc, char** argv) {
   new base::AtExitManager();
 
   if (base::CommandLine::Init(argc, argv)) {
-    //constexpr auto sandbox_type = sandbox::policy::SandboxType::kNetwork;
-    //sandbox::policy::SandboxLinux::PreSandboxHook pre_sandbox_hook =
-    //    base::BindOnce(&NetworkPreSandboxHook);
-
-    //auto* instance = sandbox::policy::SandboxLinux::GetInstance();
-    //auto options = sandbox::policy::SandboxLinux::Options();
-
-    //instance->InitializeSandbox(
-    //    sandbox_type,
-    //    std::move(pre_sandbox_hook),
-    //    options);
-
-    //instance->PreinitializeSandbox();
-
-    //const auto options = sandbox::policy::SandboxLinux::Options();
-
-    //auto broker_side_hook = sandbox::policy::SandboxLinux::PreSandboxHook();
-
-    //std::vector<BrokerFilePermission> permissions = {};
-    //permissions.push_back(BrokerFilePermission::ReadOnlyRecursive("/"));
-
-    //instance->StartBrokerProcess(
-    //    MakeBrokerCommandSet({
-    //        sandbox::syscall_broker::COMMAND_ACCESS,
-    //        sandbox::syscall_broker::COMMAND_MKDIR,
-    //        sandbox::syscall_broker::COMMAND_OPEN,
-    //        sandbox::syscall_broker::COMMAND_READLINK,
-    //        sandbox::syscall_broker::COMMAND_RENAME,
-    //        sandbox::syscall_broker::COMMAND_RMDIR,
-    //        sandbox::syscall_broker::COMMAND_STAT,
-    //        sandbox::syscall_broker::COMMAND_UNLINK,
-    //    }),
-    //    permissions,
-    //    std::move(broker_side_hook),
-    //    options);
-
     const std::string path = argv[1];
     const auto file_path = base::FilePath(path);
     const auto command_line = base::CommandLine(file_path);
