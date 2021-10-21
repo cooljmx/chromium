@@ -19,6 +19,24 @@ executable("host") {
   sources = [
     "host/algohost.cc",
     "host/algohost.h",
+    "host/utils.cc",
+    "host/native_host/nativehost.cpp",
+    "host/native_host/nativehost.h",
+    "host/native_host/inc/nethost.h",
+    "host/native_host/inc/hostfxr.h",
+    "host/native_host/inc/coreclr_delegates.h",
+  ]
+
+  include_dirs = [
+    "host/native_host/inc"
+  ]
+
+  lib_dirs = [
+    "host/native_host/libs"
+  ]
+
+  libs = [
+    "nethost"
   ]
 
   defines = [ "ALGO_BROKER_EXPORTS" ]
@@ -27,7 +45,18 @@ executable("host") {
     "//base",
     "//sandbox/linux:sandbox",
     "//sandbox/policy",
+    ":copy_nethost",
+    ":copy_config",
   ]
 
   output_name = "algohost.netcore"
+}
+
+copy("copy_nethost") {
+  sources = [ "host/native_host/libs/libnethost.so" ]
+  outputs = [ "$root_out_dir/libnethost.so" ]
+}
+copy("copy_config") {
+  sources = [ "host/native_host/DotNetLib.runtimeconfig.json" ]
+  outputs = [ "$root_out_dir/testing_app" ]
 }

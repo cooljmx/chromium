@@ -9,7 +9,6 @@
 #include "sandbox/policy/sandbox_type.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
-
 using sandbox::syscall_broker::BrokerFilePermission;
 using sandbox::syscall_broker::MakeBrokerCommandSet;
 
