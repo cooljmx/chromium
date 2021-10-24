@@ -20,7 +20,7 @@ executable("host") {
     "host/algohost.cc",
     "host/algohost.h",
     "host/utils.cc",
-    "host/native_host/nativehost.cpp",
+    "host/native_host/nativehost.cc",
     "host/native_host/nativehost.h",
     "host/native_host/inc/nethost.h",
     "host/native_host/inc/hostfxr.h",

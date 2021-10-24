@@ -233,22 +233,22 @@ int prepare_sandbox(int argc, char** argv) {
 //      return EXIT_FAILURE;
 //  }
 
-	const auto root = fs::current_path();
-	const auto testing_app = root / "testing_app";
-	const auto target = root / "mnt";
+    const auto root = fs::current_path();
+    const auto testing_app = root / "testing_app";
+    const auto target = root / box;
 
-	const auto dll_filter = [](const fs::path& p) -> bool { return true };
-	CopyRecursive(src, target, dll_filter);
+    const auto bypass = [](const fs::path& p) -> bool { return true };
+    CopyRecursive(testing_app, target, bypass);
 
-	const auto so_filter = [](const fs::path& p) -> bool
-	{
-		return p.extension().generic_string().find("so") != std::string::npos
-            || p.extension().generic_string().find(".netcore") != std::string::npos;
-	};
-	CopyRecursive(src, target, so_filter);
+    const auto so_filter = [](const fs::path& p) -> bool
+    {
+        return p.extension().generic_string().find("so") != std::string::npos
+            || p.extension().generic_string().find("netcore") != std::string::npos;
+    };
+    CopyRecursive(root, target, so_filter);
 
-	if (base::CommandLine::Init(argc, argv)) {
-		instance->PreinitializeSandbox();
+    if (base::CommandLine::Init(argc, argv)) {
+        instance->PreinitializeSandbox();
 
         //      int pipe_fd;
         //      if ((pipe_fd = open(out_pipe, O_WRONLY | O_CLOEXEC)) == -1) {
