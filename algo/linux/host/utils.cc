@@ -3,7 +3,7 @@
 #include <iostream>
 
 void CopyRecursive(const fs::path& src, const fs::path& target,
-                   const std::function<bool(fs::path)>& predicate) noexcept
+        const std::function<bool(fs::path)>& predicate) noexcept
 {
     try
     {
@@ -19,7 +19,7 @@ void CopyRecursive(const fs::path& src, const fs::path& target,
 
                 // Copy to the targetParentPath which we just created.
                 fs::copy(p, targetParentPath, fs::copy_options::overwrite_existing);
-		std::cout << "coping " << targetParentPath << std::endl;
+                std::cout << "coping " << targetParentPath << std::endl;
             }
         }
     }
