@@ -1,0 +1,2 @@
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+export COMPlus_EnableDiagnostics=0
