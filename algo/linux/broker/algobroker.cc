@@ -17,7 +17,7 @@ bool callback(sandbox::policy::SandboxLinux::Options options) {
 }
 
 int main(int argc, char** argv) {
-  std::cout << "AlgoBroker started" << std::endl;
+  std::cout << "AlgoBroker started!" << std::endl;
 
   new base::AtExitManager();
 
