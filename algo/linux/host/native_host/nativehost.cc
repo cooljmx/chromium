@@ -3,27 +3,24 @@
 // See the LICENSE file in the project root for more information.
 
 // Standard headers
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 #include <iostream>
 
-// Provided by the AppHost NuGet package and installed as an SDK pack
-#include <nethost.h>
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Header files copied from https://github.com/dotnet/core-setup
 #include <coreclr_delegates.h>
 #include <hostfxr.h>
 
 #include <dlfcn.h>
-#include <limits.h>
+//#include <limits.h>
 
 #define STR(s) s
 #define CH(c) c
 #define DIR_SEPARATOR '/'
-#define MAX_PATH PATH_MAX
 
 using string_t = std::basic_string<char>;
 
@@ -71,7 +68,7 @@ int launch_dotnet(const char* dotnetlib_path, const char* dotnet_type, const cha
         nullptr,
         (void**)&entry_fn);
 
-    std::cerr << "load_assembly_and_get_function_pointer rc is: " << std::hex << std::showbase << rc << std::endl;
+    std::cerr << "load_assembly_and_get_function_pointer rc is: " << std::hex << std::showbase << rc << "\n" << std::endl;
     assert(rc == 0 && entry_fn != nullptr && "Failure: load_assembly_and_get_function_pointer()");
 
     //
@@ -106,7 +103,6 @@ namespace
 
     void *load_library(const char *path)
     {
-        //void *h = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
         void *h = dlopen(path, RTLD_NOW | RTLD_GLOBAL );
         assert(h != nullptr);
         return h;
@@ -121,15 +117,9 @@ namespace
     // Using the nethost library, discover the location of hostfxr and get exports
     bool load_hostfxr()
     {
-        // Pre-allocate a large buffer for the path to hostfxr
-        char buffer[MAX_PATH];
-        size_t buffer_size = sizeof(buffer) / sizeof(char);
-        int rc = get_hostfxr_path(buffer, &buffer_size, nullptr);
-        if (rc != 0)
-            return false;
-
         // Load hostfxr and get desired exports
-        void *lib = load_library(buffer);
+        // TODO: pass basename
+        void *lib = load_library("libhostfxr.so");
         init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
         get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
         close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");

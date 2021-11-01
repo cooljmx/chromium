@@ -3,16 +3,23 @@
 #include <iostream>
 // #include <ostream>
 
-#include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
+
 #include <libgen.h>
+#include <limits.h>
+#include <nethost.h>
+#include <signal.h>
 #include <stdio.h>
 // #include <stdlib.h>
+#include <unistd.h>
 #include <sys/mount.h>
 #include <sys/syscall.h>
 // #include <sys/types.h>
 // #include <sys/wait.h>
 
 #include "algo/linux/host/native_host/nativehost.h"
+#include "base/files/file_util.h"
 #include "sandbox/linux/services/credentials.h"
 #include "sandbox/linux/services/namespace_sandbox.h"
 // #include "sandbox/linux/syscall_broker/broker_process.h"
@@ -20,11 +27,6 @@
 
 using sandbox::syscall_broker::BrokerFilePermission;
 using sandbox::syscall_broker::MakeBrokerCommandSet;
-
-namespace fs = std::filesystem;
-
-void CopyRecursive(const fs::path& src, const fs::path& target,
-                   const std::function<bool(fs::path)>& predicate);
 
 void check_status(const int value, const sandbox::policy::SandboxLinux::Status status, const char* message) {
     if ((value & status) == status)
@@ -50,10 +52,6 @@ void process_status(const int status) {
             "User namespace sandbox active");
     check_status(status, sandbox::policy::SandboxLinux::Status::kYama,
             "The Yama LSM module is present and enforcing");
-}
-
-void run_external() {
-    //execl("~/shared/spotware/ubuntu/net-target-process/net-target-process/bin/Debug/net5.0/net-target-process","");
 }
 
 //static bool StartBrokerProcessHook(sandbox::policy::SandboxLinux::Options options) {
@@ -86,7 +84,47 @@ void run_external() {
 //    return true;
 //}
 
+bool copy_lib(const char* lib_path, const base::FilePath lib_dir) {
+    char library[PATH_MAX];
+    char library_link[PATH_MAX];
+    const auto *gnu_lib_dir = "/usr/lib/x86_64-linux-gnu/";
+    const auto *library_link_base = lib_path;
+
+    strcpy(library_link, gnu_lib_dir);
+    strcat(library_link, library_link_base);
+
+    strcpy(library, gnu_lib_dir);
+    const size_t library_dirname_len = strlen(library);
+
+    ssize_t bytes_written;
+    if ((bytes_written = readlink(library_link, &library[library_dirname_len], PATH_MAX)) == -1) {
+        fprintf(stderr, "unable to read library path: %m\n");
+        return false;
+    }
+    const size_t written_total = bytes_written + library_dirname_len;
+    if (written_total >= PATH_MAX) {
+        fprintf(stderr, "library path is too long\n");
+        return false;
+    }
+    library[written_total] = '\0';
+
+    const auto library_src =  base::FilePath(library);
+    const auto library_dest = lib_dir.Append(&library[library_dirname_len]);
+    std::cout << "copying " << library_src << " to " << library_dest << std::endl;
+    if (!base::CopyFile(library_src, library_dest)) {
+        fprintf(stderr, "unable to copy library to dest path\n");
+        return false;
+    }
+    return true;
+}
+
 int prepare_sandbox(int argc, char** argv) {
+    char host_fxr_path[PATH_MAX];
+    size_t host_fxr_path_size = sizeof(host_fxr_path) / sizeof(char);
+    int rc = get_hostfxr_path(host_fxr_path, &host_fxr_path_size, nullptr);
+    if (rc)
+        return EXIT_FAILURE;
+
     new base::AtExitManager();
 
     auto* instance = sandbox::policy::SandboxLinux::GetInstance();
@@ -114,49 +152,107 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    char *old_root = NULL;
     const char box[] = "/mnt/box";
-    const char out_pipe[] = "out_pipe";
-    const unsigned char byte_size = 255;
-    char new_root[byte_size];
-    int bytes_written;
-    if ((bytes_written = readlink("/proc/self/exe", new_root, byte_size)) == -1) {
+    char out_algo[PATH_MAX];
+
+    ssize_t bytes_written;
+    if ((bytes_written = readlink("/proc/self/exe", out_algo, PATH_MAX)) == -1) {
         fprintf(stderr, "unable to read exe's path or the path is too long: %m\n");
         return EXIT_FAILURE;
     }
-    else {
-        if (++bytes_written > byte_size) {
-            fprintf(stderr, "exe's path is too long\n");
+    if (++bytes_written > PATH_MAX) {
+        fprintf(stderr, "exe's path is too long\n");
+        return EXIT_FAILURE;
+    }
+    out_algo[bytes_written] = '\0';
+
+    if (!strcmp(dirname(out_algo), ".")) {
+        fprintf(stderr, "exe's path is not valid: %s\n", out_algo);
+        return EXIT_FAILURE;
+    }
+
+    char home[PATH_MAX];
+    if (strcpy(home, getenv("HOME")) == NULL) {
+        fprintf(stderr, "unable to get HOME dir\n");
+        return EXIT_FAILURE;
+    }
+
+    const auto new_root_path = base::FilePath(home).Append(&box[1]);
+    const auto old_root_path = new_root_path.Append("old_root");
+    const auto *new_root = new_root_path.value().c_str();
+    const auto *old_root = old_root_path.value().c_str();
+    if (!base::CreateDirectory(new_root_path)) {
+        fprintf(stderr, "unable to create a ~/mnt/box dir\n");
+        return EXIT_FAILURE;
+    }
+    if (!base::CreateDirectory(old_root_path)) {
+        fprintf(stderr, "unable to create a ~/mnt/box/old_root dir\n");
+        return EXIT_FAILURE;
+    }
+
+    char host_fxr_base[PATH_MAX];
+    strcpy(host_fxr_base, host_fxr_path);
+    const char *fxr_base = basename(host_fxr_base);
+    const auto lib_dir = new_root_path.Append("lib");
+    const auto dest_path = lib_dir.Append(fxr_base);
+
+    if (!base::CreateDirectory(lib_dir)) {
+        fprintf(stderr, "unable to create a lib directory\n");
+        return EXIT_FAILURE;
+    }
+
+//  Disabled for now
+//  if (!copy_lib("libicuuc.so", lib_dir)) {
+//      return EXIT_FAILURE;
+//  }
+//  if (!copy_lib("libicudata.so", lib_dir)) {
+//      return EXIT_FAILURE;
+//  }
+
+    std::cout << "copying " << host_fxr_path << " to " << dest_path << std::endl;
+    if (!base::CopyFile(base::FilePath(host_fxr_path), dest_path)) {
+        fprintf(stderr, "unable to copy hostfxr lib to dest path\n");
+        return EXIT_FAILURE;
+    }
+
+    const auto *dotnet = "/usr/share/dotnet/shared";
+    std::cout << "copying " << dotnet << " to " << new_root << std::endl;
+    if (!base::CopyDirectory(base::FilePath(dotnet), new_root_path, true)) {
+        fprintf(stderr, "unable to copy dotnet to new root\n");
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "copying " << out_algo << " to " << new_root << std::endl;
+    if (!base::CopyDirectory(base::FilePath(out_algo), new_root_path, true)) {
+        fprintf(stderr, "unable to copy the current dir to new root\n");
+        return EXIT_FAILURE;
+    }
+
+    char dir_path[255];
+    const auto dir_path_obj = new_root_path.Append("proc");
+    strcpy(dir_path, dir_path_obj.value().c_str());
+
+    DIR *dir = opendir(dir_path);
+    if (dir) {
+        closedir(dir);
+    } else if (ENOENT == errno) {
+        if (mkdir(dir_path, 0777) == -1) {
+            fprintf(stderr, "unable to create proc dir: %m\n");
             return EXIT_FAILURE;
         }
-        else {
-            new_root[bytes_written] = '\0';
-        }
-    }
-    if (!strcmp(dirname(new_root), ".")) {
-        fprintf(stderr, "exe's path is not valid: %s\n", new_root);
+    } else {
+        fprintf(stderr, "unable to open a proc directory: %m\n");
         return EXIT_FAILURE;
     }
-    if ((strlen(new_root) + strlen(box) + 1) > byte_size) {
-        fprintf(stderr, "box path is too long");
-        free(old_root);
+    strcat(dir_path, "/self");
+    mkdir(dir_path, 0777);
+    creat("/home/alex/mnt/box/proc/self/maps", 0777);
+    if (mount("/proc/self/maps", "/home/alex/mnt/box/proc/self/maps", "bind", MS_BIND, "") == -1) {
+        fprintf(stderr, "unable to mount maps: %m\n");
         return EXIT_FAILURE;
     }
-    else {
-        strcat(new_root, box);
-    }
-    if (mkdir("mnt", 0755) == -1) {
-        fprintf(stderr, "unable to create mnt dir: %m\n");
-        return EXIT_FAILURE;
-    }
-    if (mkdir("mnt/box", 0755) == -1) {
-        fprintf(stderr, "unable to create mnt dir: %m\n");
-        return EXIT_FAILURE;
-    }
-    if (asprintf(&old_root, "%s/old_root_XXXXXX", new_root) == -1) {
-        fprintf(stderr, "unable to allocate old_root directory: %m\n");
-        return EXIT_FAILURE;
-    }
+    strcat(dir_path, "/exe");
+    symlink("/algo/algohost.netcore", dir_path);
     if (mount("", "/", "", MS_PRIVATE | MS_REC, "") == -1) {
         fprintf(stderr, "unable to make current root private: %m\n");
         return EXIT_FAILURE;
@@ -165,93 +261,50 @@ int prepare_sandbox(int argc, char** argv) {
         fprintf(stderr, "unable to turn new root into mountpoint: %m\n");
         return EXIT_FAILURE;
     }
-    if (mkdtemp(old_root) == NULL) {
-        fprintf(stderr, "unable to create temporary directory for pivot root: %m\n");
-        free(old_root);
-        return EXIT_FAILURE;
-    }
-    std::cout << "old_root is " << old_root << std::endl;
-    std::cout << "new_root is " << new_root << std::endl;
-
     if (syscall(__NR_pivot_root, new_root, old_root) == -1) {
         fprintf(stderr, "unable to pivot root to %s: %m\n", new_root);
-        rmdir(old_root);
-        free(old_root);
         return EXIT_FAILURE;
     }
     if (chdir("/") == -1) {
         fprintf(stderr, "unable to change dir to /: %m\n");
-        free(old_root);
         return EXIT_FAILURE;
     }
     if (chroot("/") == -1) {
         fprintf(stderr, "unable to chroot: %m\n");
-        free(old_root);
         return EXIT_FAILURE;
     }
-    if (mkdir("proc", 0555) == -1) {
-        fprintf(stderr, "unable to create proc dir: %m\n");
-        free(old_root);
+    if (umount2("old_root", MNT_DETACH) == -1) {
+        fprintf(stderr, "unable to umount new root: %m\n");
         return EXIT_FAILURE;
     }
 
-    char *p = NULL;
-    p = old_root;
-    p += strlen(new_root);
-    if (umount2(p, MNT_DETACH) == -1) {
-        fprintf(stderr, "unable to umount old root: %m\n");
-        free(old_root);
-        return EXIT_FAILURE;
-    }
-    if (rmdir(p) == -1) {
-        fprintf(stderr, "unable to remove directory for old root: %m\n");
-        free(old_root);
-        return EXIT_FAILURE;
-    }
-    if (mkfifo("out_pipe", 0600) == -1) {
-        fprintf(stderr, "unable to create a pipe: %m\n");
-        free(old_root);
-        return EXIT_FAILURE;
+    const auto *out_pipe = "/out_pipe";
+    if (access(out_pipe, F_OK)) {
+        if (mkfifo(out_pipe, 0600) == -1) {
+            fprintf(stderr, "unable to create a out_pipe: %m\n");
+            return EXIT_FAILURE;
+        }
     }
     if (mount("/", "/", "bind", MS_REMOUNT | MS_BIND | MS_REC | MS_RDONLY, "") == -1) {
         fprintf(stderr, "unable to turn new root into readonly mountpoint: %m\n");
-        free(old_root);
         return EXIT_FAILURE;
     }
     if (mount(out_pipe, out_pipe, "bind", MS_BIND, "") == -1) {
         fprintf(stderr, "unable to turn new root into writable mountpoint: %m\n");
-        free(old_root);
         return EXIT_FAILURE;
     }
 
     PCHECK(sandbox::Credentials::DropAllCapabilitiesOnCurrentThread());
 
-//  std::vector<sandbox::Credentials::Capability> capps;
-//  capps.push_back(sandbox::Credentials::Capability::SYS_ADMIN);
-//  if (!sandbox::Credentials::SetCapabilitiesOnCurrentThread(capps)) {
-//      fprintf(stderr, "unable to set capppabilities: %m\n");
-//      return EXIT_FAILURE;
-//  }
-
-    const auto root = fs::current_path();
-    const auto testing_app = root / "testing_app";
-    const auto target = root / box;
-
-    const auto bypass = [](const fs::path& p) -> bool { return true };
-    CopyRecursive(testing_app, target, bypass);
-
-    const auto so_filter = [](const fs::path& p) -> bool
-    {
-        return p.extension().generic_string().find("so") != std::string::npos
-            || p.extension().generic_string().find("netcore") != std::string::npos;
-    };
-    CopyRecursive(root, target, so_filter);
+    assert(!access("algo/algohost.netcore", F_OK));
+    assert(access("/home/alex/temp", F_OK));
+    assert(access("/usr/bin/bash", F_OK));
 
     if (base::CommandLine::Init(argc, argv)) {
         instance->PreinitializeSandbox();
 
         //      int pipe_fd;
-        //      if ((pipe_fd = open(out_pipe, O_WRONLY | O_CLOEXEC)) == -1) {
+        //      if ((pipe_fd = open(out_pipe, O_WRONLY | O_CLOEXEc)) == -1) {
         //          fprintf(stderr, "unable to write to the pipe: %m\n");
         //          return EXIT_FAILURE;
         //      }
@@ -314,16 +367,15 @@ int main(int argc, char** argv) {
     // system("ip addr");
 
     int res;
-
     res = prepare_sandbox(argc, argv);
     if (res == EXIT_FAILURE) {
         return EXIT_FAILURE;
     }
 
-    const char *config = "DotNetLib.runtimeconfig.json"
-    const char *dotnet_path = "testing_app.dll";
+    const char *config = "algo/DotNetLib.runtimeconfig.json";
+    const char *dotnet_path = "algo/testing_app/testing_app.dll";
     const char *dotnet_type = "testing_app.Program, testing_app";
-    const char *dotnet_type_method = "DisplayNetworkConfiguration";
+    const char *dotnet_type_method = "HelloWorldFromDotNetCore";
 
     res = launch_dotnet(dotnet_path, dotnet_type, dotnet_type_method, config);
 
@@ -334,7 +386,7 @@ int main(int argc, char** argv) {
         std::cout << "seccomp_bpf not started" << std::endl;
     }
 
-    printf("Result is %d\n", res);
+    printf("dotnet return code is %d\n", res);
     if (res != 0)
         printf("Error %d \"%s\"\n", errno, strerror(errno));
 
