@@ -58,5 +58,5 @@ copy("copy_nethost") {
 
 copy("copy_config") {
   sources = [ "host/native_host/DotNetLib.runtimeconfig.json" ]
-  outputs = [ "$root_out_dir/testing_app" ]
+  outputs = [ "$root_out_dir/testing_app/DotNetLib.runtimeconfig.json" ]
 }
