@@ -19,7 +19,6 @@ executable("host") {
   sources = [
     "host/algohost.cc",
     "host/algohost.h",
-    "host/utils.cc",
     "host/native_host/nativehost.cc",
     "host/native_host/nativehost.h",
     "host/native_host/inc/nethost.h",
@@ -36,7 +35,7 @@ executable("host") {
   ]
 
   libs = [
-    "nethost"
+    "nethost",
   ]
 
   defines = [ "ALGO_BROKER_EXPORTS" ]
@@ -56,6 +55,7 @@ copy("copy_nethost") {
   sources = [ "host/native_host/libs/libnethost.so" ]
   outputs = [ "$root_out_dir/libnethost.so" ]
 }
+
 copy("copy_config") {
   sources = [ "host/native_host/DotNetLib.runtimeconfig.json" ]
   outputs = [ "$root_out_dir/testing_app" ]
