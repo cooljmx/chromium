@@ -70,3 +70,21 @@ $ ninja -C out/algo algo/linux:broker algo/linux:host
 You can find build result in `~/spotware/chromium/src/out/algo:`
 - `algobroker.netcore`
 - `algohost.netcore`
+
+
+Build C# testing app:
+```shell
+$ cd ./algo/linux/testing_app; dotnet build -o ../../../out/algo/testing_app && cd -;
+```
+
+
+Source in dotnet environment vars:
+```shell
+$ source ./algo/linux/env_vars.sh
+```
+
+
+Run the sandbox:
+```shell
+$ ./out/algo/algobroker.netcore ./out/algo/algohost.netcore
+```
