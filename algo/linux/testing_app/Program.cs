@@ -10,19 +10,26 @@ namespace testing_app
 {
     static class Program
     {
-		public static int DisplayNetworkConfiguration(IntPtr arg, int argLength)
-		{
-		    NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-		    foreach (NetworkInterface adapter in adapters)
-		    {
+        public static int DisplayNetworkConfiguration(IntPtr arg, int argLength)
+        {
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface adapter in adapters)
+            {
                 IPInterfaceProperties properties = adapter.GetIPProperties();
-				var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 Console.WriteLine(path);
                 Console.WriteLine(adapter.Description);
-		    }
-		    Console.WriteLine();
-			return 2;
-		}
+            }
+            Console.WriteLine();
+            return 2;
+        }
+
+        public static int HelloWorldFromDotNetCore(IntPtr arg, int argLength)
+        {
+            Console.WriteLine("Hello World from .Net");
+            Console.WriteLine();
+            return 0;
+        }
 
         static void Main(string[] args)
         {
@@ -30,7 +37,7 @@ namespace testing_app
             Console.WriteLine(typeof(Program).Assembly.FullName);
 
             Console.WriteLine("Qualified name is ");
-			Console.WriteLine(typeof(Program).AssemblyQualifiedName);
+            Console.WriteLine(typeof(Program).AssemblyQualifiedName);
 
             DisplayNetworkConfiguration(IntPtr.Zero, 0);
 
