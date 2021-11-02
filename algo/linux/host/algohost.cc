@@ -246,11 +246,16 @@ int prepare_sandbox(int argc, char** argv) {
     }
     strcat(dir_path, "/self");
     mkdir(dir_path, 0777);
-    creat("/home/alex/mnt/box/proc/self/maps", 0777);
-    if (mount("/proc/self/maps", "/home/alex/mnt/box/proc/self/maps", "bind", MS_BIND, "") == -1) {
+
+    char mmaps[PATH_MAX];
+    strcpy(mmaps, dir_path);
+    strcat(mmaps, "/maps");
+    creat(mmaps, 0777);
+    if (mount("/proc/self/maps", mmaps, "bind", MS_BIND, "") == -1) {
         fprintf(stderr, "unable to mount maps: %m\n");
         return EXIT_FAILURE;
     }
+
     strcat(dir_path, "/exe");
     symlink("/algo/algohost.netcore", dir_path);
     if (mount("", "/", "", MS_PRIVATE | MS_REC, "") == -1) {
@@ -297,7 +302,7 @@ int prepare_sandbox(int argc, char** argv) {
     PCHECK(sandbox::Credentials::DropAllCapabilitiesOnCurrentThread());
 
     assert(!access("algo/algohost.netcore", F_OK));
-    assert(access("/home/alex/temp", F_OK));
+    assert(access("/home", F_OK));
     assert(access("/usr/bin/bash", F_OK));
 
     if (base::CommandLine::Init(argc, argv)) {
