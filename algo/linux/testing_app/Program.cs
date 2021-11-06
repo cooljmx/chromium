@@ -31,6 +31,13 @@ namespace testing_app
             return 0;
         }
 
+        //  use arg
+        public static int ReverseLine(IntPtr arg, int argLength)
+        {
+            Console.WriteLine("Write to pipe in_pipe and read from out_pipe");
+            return 0;
+        }
+
         static void Main(string[] args)
         {
             Console.WriteLine("The display name is ");

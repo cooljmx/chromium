@@ -387,7 +387,7 @@ int main(int argc, char** argv) {
     const char *config = "algo/DotNetLib.runtimeconfig.json";
     const char *dotnet_path = "algo/testing_app/testing_app.dll";
     const char *dotnet_type = "testing_app.Program, testing_app";
-    const char *dotnet_type_method = "HelloWorldFromDotNetCore";
+    const char *dotnet_type_method = "ReverseLine";
 
     res = launch_dotnet(dotnet_path, dotnet_type, dotnet_type_method, config);
 
