@@ -284,9 +284,16 @@ int prepare_sandbox(int argc, char** argv) {
     }
 
     const auto *out_pipe = "/out_pipe";
+    const auto *in_pipe = "/in_pipe";
     if (access(out_pipe, F_OK)) {
-        if (mkfifo(out_pipe, 0600) == -1) {
-            fprintf(stderr, "unable to create a out_pipe: %m\n");
+        if (mkfifo(out_pipe, 0200) == -1) {
+            fprintf(stderr, "unable to create out_pipe: %m\n");
+            return EXIT_FAILURE;
+        }
+    }
+    if (access(in_pipe, F_OK)) {
+        if (mkfifo(in_pipe, 0400) == -1) {
+            fprintf(stderr, "unable to create in_pipe: %m\n");
             return EXIT_FAILURE;
         }
     }
@@ -295,7 +302,7 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     if (mount(out_pipe, out_pipe, "bind", MS_BIND, "") == -1) {
-        fprintf(stderr, "unable to turn new root into writable mountpoint: %m\n");
+        fprintf(stderr, "unable to turn out_pipe into writable mountpoint: %m\n");
         return EXIT_FAILURE;
     }
 
