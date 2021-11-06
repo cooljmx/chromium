@@ -157,7 +157,7 @@ int prepare_sandbox(int argc, char** argv) {
 
     ssize_t bytes_written;
     if ((bytes_written = readlink("/proc/self/exe", out_algo, PATH_MAX)) == -1) {
-        fprintf(stderr, "unable to read exe's path or the path is too long: %m\n");
+        fprintf(stderr, "unable to read exe's path: %m\n");
         return EXIT_FAILURE;
     }
     if (++bytes_written > PATH_MAX) {
@@ -279,7 +279,7 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
     if (umount2("old_root", MNT_DETACH) == -1) {
-        fprintf(stderr, "unable to umount new root: %m\n");
+        fprintf(stderr, "unable to umount old root: %m\n");
         return EXIT_FAILURE;
     }
 
