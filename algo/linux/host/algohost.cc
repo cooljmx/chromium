@@ -1,7 +1,6 @@
 #include <filesystem>
 #include <functional>
 #include <iostream>
-// #include <ostream>
 
 #include <dirent.h>
 #include <errno.h>
@@ -11,26 +10,22 @@
 #include <nethost.h>
 #include <signal.h>
 #include <stdio.h>
-// #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mount.h>
 #include <sys/syscall.h>
-// #include <sys/types.h>
-// #include <sys/wait.h>
 
 #include "algo/linux/host/native_host/nativehost.h"
 #include "base/files/file_util.h"
 #include "sandbox/linux/services/credentials.h"
 #include "sandbox/linux/services/namespace_sandbox.h"
-// #include "sandbox/linux/syscall_broker/broker_process.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
 using sandbox::syscall_broker::BrokerFilePermission;
 using sandbox::syscall_broker::MakeBrokerCommandSet;
 
 void check_status(const int value, const sandbox::policy::SandboxLinux::Status status, const char* message) {
-//  if ((value & status) == status)
-//      std::cout << "Status: " << message << std::endl;
+    if ((value & status) == status)
+        std::cout << "Status: " << message << std::endl;
 }
 
 void process_status(const int status) {
@@ -52,24 +47,6 @@ void process_status(const int status) {
             "User namespace sandbox active");
     check_status(status, sandbox::policy::SandboxLinux::Status::kYama,
             "The Yama LSM module is present and enforcing");
-}
-
-static bool StartBrokerProcessHook(sandbox::policy::SandboxLinux::Options options) {
-    std::cout << "In StartBrokerProcessHook" << std::endl;
-
-    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
-
-    const int status = instance->GetStatus();
-
-    process_status(status);
-
-    if (instance->seccomp_bpf_started()) {
-        std::cout << "seccomp_bpf started" << std::endl;
-    } else {
-        std::cout << "seccomp_bpf not started" << std::endl;
-    }
-
-    return true;
 }
 
 static bool InitializeSandboxHook(sandbox::policy::SandboxLinux::Options options) {
@@ -116,34 +93,9 @@ bool copy_lib(const char* lib_path, const base::FilePath lib_dir) {
     return true;
 }
 
-bool run_broker() {
+bool setup_syscall_filter() {
     auto* instance = sandbox::policy::SandboxLinux::GetInstance();
     instance->PreinitializeSandbox();
-
-    auto options = sandbox::policy::SandboxLinux::Options();
-//  options.allow_threads_during_sandbox_init = true;
-//  options.check_for_open_directories = false;
-
-    instance->StartBrokerProcess(
-        MakeBrokerCommandSet(
-            {
-                sandbox::syscall_broker::COMMAND_ACCESS,
-                sandbox::syscall_broker::COMMAND_MKDIR,
-                sandbox::syscall_broker::COMMAND_OPEN,
-                sandbox::syscall_broker::COMMAND_READLINK,
-                sandbox::syscall_broker::COMMAND_RENAME,
-                sandbox::syscall_broker::COMMAND_RMDIR,
-                sandbox::syscall_broker::COMMAND_STAT,
-                sandbox::syscall_broker::COMMAND_STAT64,
-                sandbox::syscall_broker::COMMAND_UNLINK,
-            }
-        ),
-        {
-            BrokerFilePermission::ReadWriteCreateRecursive("/"),
-        },
-        base::BindOnce(StartBrokerProcessHook),
-        options
-    );
 
     if (instance->InitializeSandbox(sandbox::policy::SandboxType::kUtility,
                                     base::BindOnce(InitializeSandboxHook), options)) {
@@ -162,7 +114,7 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (!run_broker()) {
+    if (!setup_syscall_filter()) {
         fprintf(stderr, "unable to launch a broker");
         return EXIT_FAILURE;
     }
@@ -363,11 +315,6 @@ int prepare_sandbox(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     std::cout << "AlgoHost started" << std::endl;
-    //pid_t pid = fork();
-
-    //if (pid == 0) {
-    //   printf("I am the child.\n");
-    // system("ip addr");
 
     int res;
     res = prepare_sandbox(argc, argv);
@@ -392,17 +339,6 @@ int main(int argc, char** argv) {
     printf("dotnet return code is %d\n", res);
     if (res != 0)
         printf("Error %d \"%s\"\n", errno, strerror(errno));
-
-    //}
-    //if (pid > 0) {
-    //  printf("I am the parent, the child is %d.\n", pid);
-    //  int status;
-    //  waitpid(pid, &status, 0);
-    //  printf("parent done\n");
-    //}
-    //if (pid < 0) {
-    //  perror("In fork():");
-    //}
 
     std::cout << "AlgoHost finished" << std::endl;
 }
