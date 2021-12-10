@@ -29,8 +29,8 @@ using sandbox::syscall_broker::BrokerFilePermission;
 using sandbox::syscall_broker::MakeBrokerCommandSet;
 
 void check_status(const int value, const sandbox::policy::SandboxLinux::Status status, const char* message) {
-    if ((value & status) == status)
-        std::cout << "Status: " << message << std::endl;
+//  if ((value & status) == status)
+//      std::cout << "Status: " << message << std::endl;
 }
 
 void process_status(const int status) {
@@ -54,35 +54,33 @@ void process_status(const int status) {
             "The Yama LSM module is present and enforcing");
 }
 
-//static bool StartBrokerProcessHook(sandbox::policy::SandboxLinux::Options options) {
-//    std::cout << "In StartBrokerProcessHook" << std::endl;
-//
-//    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
-//
-//    const int status = instance->GetStatus();
-//
-//    process_status(status);
-//
-//    if (instance->seccomp_bpf_started()) {
-//        std::cout << "seccomp_bpf started" << std::endl;
-//    } else {
-//        std::cout << "seccomp_bpf not started" << std::endl;
-//    }
-//
-//    return true;
-//}
-//
-//static bool InitializeSandboxHook(sandbox::policy::SandboxLinux::Options options) {
-//    std::cout << "In InitializeSandboxHook" << std::endl;
-//
-//    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
-//
-//    const int status = instance->GetStatus();
-//
-//    process_status(status);
-//
-//    return true;
-//}
+static bool StartBrokerProcessHook(sandbox::policy::SandboxLinux::Options options) {
+    std::cout << "In StartBrokerProcessHook" << std::endl;
+
+    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
+
+    const int status = instance->GetStatus();
+
+    process_status(status);
+
+    if (instance->seccomp_bpf_started()) {
+        std::cout << "seccomp_bpf started" << std::endl;
+    } else {
+        std::cout << "seccomp_bpf not started" << std::endl;
+    }
+
+    return true;
+}
+
+static bool InitializeSandboxHook(sandbox::policy::SandboxLinux::Options options) {
+    std::cout << "In InitializeSandboxHook" << std::endl;
+    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
+    const int status = instance->GetStatus();
+
+    process_status(status);
+
+    return true;
+}
 
 bool copy_lib(const char* lib_path, const base::FilePath lib_dir) {
     char library[PATH_MAX];
@@ -118,16 +116,64 @@ bool copy_lib(const char* lib_path, const base::FilePath lib_dir) {
     return true;
 }
 
+bool run_broker() {
+    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
+    instance->PreinitializeSandbox();
+
+    auto options = sandbox::policy::SandboxLinux::Options();
+//  options.allow_threads_during_sandbox_init = true;
+//  options.check_for_open_directories = false;
+
+    instance->StartBrokerProcess(
+        MakeBrokerCommandSet(
+            {
+                sandbox::syscall_broker::COMMAND_ACCESS,
+                sandbox::syscall_broker::COMMAND_MKDIR,
+                sandbox::syscall_broker::COMMAND_OPEN,
+                sandbox::syscall_broker::COMMAND_READLINK,
+                sandbox::syscall_broker::COMMAND_RENAME,
+                sandbox::syscall_broker::COMMAND_RMDIR,
+                sandbox::syscall_broker::COMMAND_STAT,
+                sandbox::syscall_broker::COMMAND_STAT64,
+                sandbox::syscall_broker::COMMAND_UNLINK,
+            }
+        ),
+        {
+            BrokerFilePermission::ReadWriteCreateRecursive("/"),
+        },
+        base::BindOnce(StartBrokerProcessHook),
+        options
+    );
+
+    if (instance->InitializeSandbox(sandbox::policy::SandboxType::kUtility,
+                                    base::BindOnce(InitializeSandboxHook), options)) {
+        std::cout << "Sandbox initialized" << std::endl;
+    } else {
+        std::cout << "Sandbox not initialized" << std::endl;
+        return false;
+    }
+    return true;
+}
+
 int prepare_sandbox(int argc, char** argv) {
+    new base::AtExitManager();
+
+    if (!base::CommandLine::Init(argc, argv)) {
+        return EXIT_FAILURE;
+    }
+
+    if (!run_broker()) {
+        fprintf(stderr, "unable to launch a broker");
+        return EXIT_FAILURE;
+    }
+
     char host_fxr_path[PATH_MAX];
     size_t host_fxr_path_size = sizeof(host_fxr_path) / sizeof(char);
     int rc = get_hostfxr_path(host_fxr_path, &host_fxr_path_size, nullptr);
-    if (rc)
+    if (rc) {
+        fprintf(stderr, "unable to get hostfxr path\n");
         return EXIT_FAILURE;
-
-    new base::AtExitManager();
-
-    auto* instance = sandbox::policy::SandboxLinux::GetInstance();
+    }
 
     std::cout << "InNewPidNamespace: " <<
         sandbox::NamespaceSandbox::InNewPidNamespace() << std::endl;
@@ -222,11 +268,11 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "copying " << out_algo << " to " << new_root << std::endl;
-    if (!base::CopyDirectory(base::FilePath(out_algo), new_root_path, true)) {
-        fprintf(stderr, "unable to copy the current dir to new root\n");
-        return EXIT_FAILURE;
-    }
+//  std::cout << "copying " << out_algo << " to " << new_root << std::endl;
+//  if (!base::CopyDirectory(base::FilePath(out_algo), new_root_path, true)) {
+//      fprintf(stderr, "unable to copy the current dir to new root\n");
+//      return EXIT_FAILURE;
+//  }
 
     char dir_path[255];
     const auto dir_path_obj = new_root_path.Append("proc");
@@ -312,61 +358,6 @@ int prepare_sandbox(int argc, char** argv) {
     assert(access("/home", F_OK));
     assert(access("/usr/bin/bash", F_OK));
 
-    if (base::CommandLine::Init(argc, argv)) {
-        instance->PreinitializeSandbox();
-
-        //      int pipe_fd;
-        //      if ((pipe_fd = open(out_pipe, O_WRONLY | O_CLOEXEc)) == -1) {
-        //          fprintf(stderr, "unable to write to the pipe: %m\n");
-        //          return EXIT_FAILURE;
-        //      }
-        //      if (write(pipe_fd, box, strlen(box) + 1) == -1) {
-        //          fprintf(stderr, "unable to write to the pipe: %m\n");
-        //          return EXIT_FAILURE;
-        //      }
-        //      if (open("test", O_WRONLY | O_CLOEXEC) == -1) {
-        //          fprintf(stderr, "unable to write to regular file: %m\n");
-        //          return EXIT_FAILURE;
-        //      }
-
-
-        //      auto options = sandbox::policy::SandboxLinux::Options();
-        //      options.allow_threads_during_sandbox_init = true;
-        //      options.check_for_open_directories = false;
-
-        //      instance->StartBrokerProcess(
-        //              MakeBrokerCommandSet({
-        //                  sandbox::syscall_broker::COMMAND_ACCESS,
-        //                  sandbox::syscall_broker::COMMAND_MKDIR,
-        //                  sandbox::syscall_broker::COMMAND_OPEN,
-        //                  sandbox::syscall_broker::COMMAND_READLINK,
-        //                  sandbox::syscall_broker::COMMAND_RENAME,
-        //                  sandbox::syscall_broker::COMMAND_RMDIR,
-        //                  sandbox::syscall_broker::COMMAND_STAT,
-        //                  sandbox::syscall_broker::COMMAND_STAT64,
-        //                  sandbox::syscall_broker::COMMAND_UNLINK,
-        //                  }),
-        //              {
-        //                  BrokerFilePermission::ReadWriteCreateRecursive("/"),
-        //              },
-        //              base::BindOnce(StartBrokerProcessHook),
-        //              options);
-
-        //      if (instance->EngageNamespaceSandboxIfPossible()) {
-        //          std::cout << "Namespace sandbox engaged" << std::endl;
-        //      } else {
-        //          std::cout << "Namespace sandbox not engaged" << std::endl;
-        //      }
-
-        //      if (instance->InitializeSandbox(
-        //                  sandbox::policy::SandboxType::kUtility,
-        //                  base::BindOnce(InitializeSandboxHook),
-        //                  options)) {
-        //          std::cout << "Sandbox initialized" << std::endl;
-        //      } else {
-        //          std::cout << "Sandbox not initialized" << std::endl;
-        //      }
-    }
     return EXIT_SUCCESS;
 }
 
