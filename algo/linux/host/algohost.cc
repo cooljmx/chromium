@@ -97,6 +97,10 @@ bool setup_syscall_filter() {
     auto* instance = sandbox::policy::SandboxLinux::GetInstance();
     instance->PreinitializeSandbox();
 
+    auto options = sandbox::policy::SandboxLinux::Options();
+    // options.allow_threads_during_sandbox_init = true;
+    // options.check_for_open_directories = false;
+
     if (instance->InitializeSandbox(sandbox::policy::SandboxType::kUtility,
                                     base::BindOnce(InitializeSandboxHook), options)) {
         std::cout << "Sandbox initialized" << std::endl;
