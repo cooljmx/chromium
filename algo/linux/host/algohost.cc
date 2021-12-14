@@ -118,11 +118,6 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (!setup_syscall_filter()) {
-        fprintf(stderr, "unable to launch a broker");
-        return EXIT_FAILURE;
-    }
-
     char host_fxr_path[PATH_MAX];
     size_t host_fxr_path_size = sizeof(host_fxr_path) / sizeof(char);
     int rc = get_hostfxr_path(host_fxr_path, &host_fxr_path_size, nullptr);
@@ -258,6 +253,18 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
+    char task[PATH_MAX];
+    strcpy(task, dir_path);
+    strcat(task, "/task");
+    mkdir(task, 0777);
+    strcat(task, "/dummy");
+    mkdir(task, 0777);
+
+    char fd_dir[PATH_MAX];
+    strcpy(fd_dir, dir_path);
+    strcat(fd_dir, "/fd");
+    mkdir(fd_dir, 0777);
+
     strcat(dir_path, "/exe");
     symlink("/algo/algohost.netcore", dir_path);
     if (mount("", "/", "", MS_PRIVATE | MS_REC, "") == -1) {
@@ -323,6 +330,11 @@ int main(int argc, char** argv) {
     int res;
     res = prepare_sandbox(argc, argv);
     if (res == EXIT_FAILURE) {
+        return EXIT_FAILURE;
+    }
+
+    if (!setup_syscall_filter()) {
+        fprintf(stderr, "unable to launch a broker");
         return EXIT_FAILURE;
     }
 
