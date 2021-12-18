@@ -333,11 +333,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (!setup_syscall_filter()) {
-        fprintf(stderr, "unable to launch a broker");
-        return EXIT_FAILURE;
-    }
-
     const char *config = "algo/DotNetLib.runtimeconfig.json";
     const char *dotnet_path = "algo/testing_app/testing_app.dll";
     const char *dotnet_type = "testing_app.Program, testing_app";
@@ -357,6 +352,11 @@ int main(int argc, char** argv) {
         "from host!",
         1
     };
+
+    if (!setup_syscall_filter()) {
+        fprintf(stderr, "unable to launch a broker");
+        return EXIT_FAILURE;
+    }
 
     entry_fn(&args, sizeof(args));
 
