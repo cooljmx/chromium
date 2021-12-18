@@ -343,7 +343,22 @@ int main(int argc, char** argv) {
     const char *dotnet_type = "testing_app.Program, testing_app";
     const char *dotnet_type_method = "ReverseLine";
 
-    res = launch_dotnet(dotnet_path, dotnet_type, dotnet_type_method, config);
+    component_entry_point_fn entry_fn;
+    entry_fn = launch_dotnet(dotnet_path, dotnet_type, dotnet_type_method, config);
+
+    struct lib_args
+    {
+        const char *message;
+        int number;
+    };
+
+    lib_args args
+    {
+        "from host!",
+        1
+    };
+
+    entry_fn(&args, sizeof(args));
 
     auto* instance = sandbox::policy::SandboxLinux::GetInstance();
     if (instance->seccomp_bpf_started()) {
@@ -351,10 +366,6 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "seccomp_bpf not started" << std::endl;
     }
-
-    printf("dotnet return code is %d\n", res);
-    if (res != 0)
-        printf("Error %d \"%s\"\n", errno, strerror(errno));
 
     std::cout << "AlgoHost finished" << std::endl;
 }
