@@ -219,11 +219,11 @@ int prepare_sandbox(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-//  std::cout << "copying " << out_algo << " to " << new_root << std::endl;
-//  if (!base::CopyDirectory(base::FilePath(out_algo), new_root_path, true)) {
-//      fprintf(stderr, "unable to copy the current dir to new root\n");
-//      return EXIT_FAILURE;
-//  }
+    std::cout << "copying " << out_algo << " to " << new_root << std::endl;
+    if (!base::CopyDirectory(base::FilePath(out_algo), new_root_path, true)) {
+        fprintf(stderr, "unable to copy the current dir to new root\n");
+        return EXIT_FAILURE;
+    }
 
     char dir_path[255];
     const auto dir_path_obj = new_root_path.Append("proc");
@@ -333,7 +333,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    const char *config = "algo/DotNetLib.runtimeconfig.json";
+    const char *config = "algo/testing_app/DotNetLib.runtimeconfig.json";
     const char *dotnet_path = "algo/testing_app/testing_app.dll";
     const char *dotnet_type = "testing_app.Program, testing_app";
     const char *dotnet_type_method = "ReverseLine";
@@ -354,7 +354,7 @@ int main(int argc, char** argv) {
     };
 
     if (!setup_syscall_filter()) {
-        fprintf(stderr, "unable to launch a broker");
+        fprintf(stderr, "unable to insert a syscall filter");
         return EXIT_FAILURE;
     }
 
