@@ -31,6 +31,35 @@ namespace testing_app
             return 0;
         }
 
+        public static int ReverseLine(IntPtr arg, int argLength)
+        {
+            Console.WriteLine("Now please open a new shell and run ./algo/linux/pipes_test.sh");
+            Console.WriteLine();
+
+            Span<char> to_be_reversed = stackalloc char[2 << 12];
+            var in_pipe = new FileInfo("in_pipe");
+            var out_pipe = new FileInfo("out_pipe");
+
+            while (true) {
+                FileStream readable_stream = in_pipe.OpenRead();
+                FileStream writable_stream = out_pipe.OpenWrite();
+                var reader = new StreamReader(readable_stream, Encoding.ASCII);
+                var writer = new StreamWriter(writable_stream, Encoding.ASCII);
+
+                reader.Read(to_be_reversed);
+
+                to_be_reversed.Reverse();
+
+                writer.Write(to_be_reversed);
+                writer.Flush();
+
+                to_be_reversed.Clear();
+                readable_stream.Close();
+                writable_stream.Close();
+            }
+            return 0;
+        }
+
         static void Main(string[] args)
         {
             Console.WriteLine("The display name is ");

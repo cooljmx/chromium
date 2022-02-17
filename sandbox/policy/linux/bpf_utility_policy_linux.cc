@@ -25,31 +25,30 @@ UtilityProcessPolicy::~UtilityProcessPolicy() {}
 
 ResultExpr UtilityProcessPolicy::EvaluateSyscall(int sysno) const {
   switch (sysno) {
-    case __NR_ioctl:
-      return RestrictIoctl();
-    case __NR_prlimit64:
-      // Restrict prlimit() to reference only the calling process.
-      return RestrictPrlimitToGetrlimit(GetPolicyPid());
-    // Allow the system calls below.
-    case __NR_fdatasync:
-    case __NR_fsync:
-#if defined(__i386__) || defined(__x86_64__) || defined(__mips__) || \
-    defined(__aarch64__)
-    case __NR_getrlimit:
-#endif
-#if defined(__i386__) || defined(__arm__)
-    case __NR_ugetrlimit:
-#endif
-    case __NR_mremap:  // https://crbug.com/546204
-    case __NR_pwrite64:
-    case __NR_sysinfo:
-    case __NR_times:
-    case __NR_uname:
-      return Allow();
+    case __NR_seccomp:
+    case __NR_sendfile:
+    case __NR_socket:
+    case __NR_connect:
+    case __NR_accept:
+    case __NR_sendto:
+    case __NR_recvfrom:
+    case __NR_sendmsg:
+    case __NR_recvmsg:
+    case __NR_shutdown:
+    case __NR_bind:
+    case __NR_listen:
+    case __NR_getsockname:
+    case __NR_getpeername:
+    case __NR_socketpair:
+    case __NR_setsockopt:
+    case __NR_getsockopt:
+    case __NR_wait4:
+    case __NR_kill:
+      return Error(EINVAL);
     default:
-      // Default on the content baseline policy.
-      return BPFBasePolicy::EvaluateSyscall(sysno);
+      return Allow();
   }
+
 }
 
 }  // namespace policy

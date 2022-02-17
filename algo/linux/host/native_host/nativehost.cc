@@ -36,7 +36,11 @@ namespace
     load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char *assembly);
 }
 
-int launch_dotnet(const char* dotnetlib_path, const char* dotnet_type, const char* dotnet_type_method, const char* config)
+component_entry_point_fn launch_dotnet(
+    const char* dotnetlib_path,
+    const char* dotnet_type,
+    const char* dotnet_type_method,
+    const char* config)
 {
     //
     // STEP 1: Load HostFxr and get exported hosting functions
@@ -44,7 +48,7 @@ int launch_dotnet(const char* dotnetlib_path, const char* dotnet_type, const cha
     if (!load_hostfxr())
     {
         assert(false && "Failure: load_hostfxr()");
-        return EXIT_FAILURE;
+        return nullptr;
     }
 
     //
@@ -71,24 +75,7 @@ int launch_dotnet(const char* dotnetlib_path, const char* dotnet_type, const cha
     std::cerr << "load_assembly_and_get_function_pointer rc is: " << std::hex << std::showbase << rc << "\n" << std::endl;
     assert(rc == 0 && entry_fn != nullptr && "Failure: load_assembly_and_get_function_pointer()");
 
-    //
-    // STEP 4: Run managed code
-    //
-    struct lib_args
-    {
-        const char *message;
-        int number;
-    };
-
-    lib_args args
-    {
-        STR("from host!"),
-        1
-    };
-
-    entry_fn(&args, sizeof(args));
-
-    return EXIT_SUCCESS;
+    return entry_fn;
 }
 
 /********************************************************************************************
