@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputPath>..\bin\$(Configuration)\algohost.netcore</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>False</AppendRuntimeIdentifierToOutputPath>
+    <ApplicationRuntimeConfig>app.runtimeconfig.json</ApplicationRuntimeConfig>
+    <ApplicationRuntimeConfigDev>app.runtimeconfig.dev.json</ApplicationRuntimeConfigDev>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\mock\x86\*" Exclude="..\mock\x86\hostfxr.dll" LinkBase="x86">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\mock\x64\*" Exclude="..\mock\x64\hostfxr.dll" LinkBase="x64">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\mock\linux-x64\*" Exclude="..\mock\linux-x64\hostfxr.dll" LinkBase="linux-x64">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="PublishRuntimeConfig" AfterTargets="Publish" Condition="'$(ApplicationRuntimeConfig)' != ''">
+    <PropertyGroup>
+      <_DestApplicationRuntimeConfig>$(PublishDir)$(AssemblyName).runtimeconfig.json</_DestApplicationRuntimeConfig>
+    </PropertyGroup>
+    <Copy SourceFiles="$(ApplicationRuntimeConfig)" DestinationFiles="$(_DestApplicationRuntimeConfig)" />
+  </Target>
+
+  <Target Name="PublishRuntimeConfigDev" AfterTargets="Build" Condition="'$(ApplicationRuntimeConfigDev)' != ''">
+    <PropertyGroup>
+      <_DestApplicationRuntimeConfigDev>$(OutDir)$(AssemblyName).runtimeconfig.json</_DestApplicationRuntimeConfigDev>
+    </PropertyGroup>
+    <Copy SourceFiles="$(ApplicationRuntimeConfigDev)" DestinationFiles="$(_DestApplicationRuntimeConfigDev)" />
+  </Target>
+</Project>
