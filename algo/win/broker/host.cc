@@ -1,11 +1,24 @@
 #include <tchar.h>
 #include <windows.h>
 
-#include "algo/win/broker/algobroker.h"
 #include <iostream>
 #include <string>
 
+#include "algo/win/broker/algobroker.h"
+#include "algo/win/host/algohost.h"
+
+int run_broker_main(int argc, wchar_t** argv);
+
 int _tmain(int argc, wchar_t* argv[]) {
+	if (argc > 1) {
+		return host_main(argc, argv);
+	}
+	else {
+		return run_broker_main(argc, argv);
+	}
+}
+
+int run_broker_main(int argc, wchar_t** argv) {
 	Initialize();
 
 	wchar_t out_algo_buffer[MAX_PATH];
@@ -15,13 +28,13 @@ int _tmain(int argc, wchar_t* argv[]) {
 	}
 	const std::wstring out_algo = out_algo_buffer;
 	const std::wstring host_base = out_algo.substr(0, out_algo.find_last_of(L"/\\"));
-	const std::wstring host_path = host_base + std::wstring(L"\\algohost.netcore.exe");
+	const std::wstring host_path = host_base + std::wstring(L"\\one.netcore.exe");
 	const wchar_t* host = host_path.c_str();
 
 	algo::TargetInformation* target_result = new algo::TargetInformation;
 	algo::TargetOptions* options = new algo::TargetOptions{
 		host,                                 // host_path
-		L"",                                  // command_line
+		L"host",                              // command_line
 		L"test_env",                          // package_name
 		L"c:\\chromium\\src\\out\\x64_algo\\libc++.dll|RW",        // fs_rules
 		L"",                                  // reg_rules

@@ -43,7 +43,7 @@ const string_t ENDPOINT_CONFIG = read_environment_variable(L"ENDPOINT_CONFIG");
 const string_t ENDPOINT_TYPE = read_environment_variable(L"ENDPOINT_TYPE");
 const string_t ENDPOINT_METHOD = read_environment_variable(L"ENDPOINT_METHOD");
 
-int _tmain(int argc, char_t* argv[])
+int host_main(int argc, wchar_t* argv[])
 {
   SleepEx(10000, false);
 

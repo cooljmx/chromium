@@ -1,38 +1,8 @@
-shared_library("broker") {
+executable("the_one") {
   sources = [
+    "broker/algobroker.h",
     "broker/algobroker.cc",
-    "broker/algobroker.h",
-  ]
-
-  defines = [ "ALGO_BROKER_EXPORTS" ]
-
-  deps = [
-    "//sandbox/win:sandbox",
-  ]
-
-  output_name = "algobroker.netcore"
-}
-
-executable("run_broker") {
-  sources = [
-    "broker/algobroker.h",
     "broker/host.cc",
-  ]
-
-  deps = [
-    "//sandbox/win:sandbox",
-    ":broker",
-  ]
-
-  libs = [
-    "algobroker.netcore.dll.lib",
-  ]
-
-  output_name = "run_broker.netcore"
-}
-
-executable("host") {
-  sources = [
     "host/algohost.cc",
     "host/algohost.h",
     "host/coreclr_delegates.h",
@@ -43,5 +13,5 @@ executable("host") {
     "//sandbox/win:sandbox",
   ]
 
-  output_name = "algohost.netcore"
+  output_name = "one.netcore"
 }
