@@ -40,14 +40,14 @@ ResultCode SetupProtectedMode(
     if (result != SBOX_ALL_OK)
       break;
 
-    result = target_policy->AddAppContainerProfile(
-      package_name, true);
+//  result = target_policy->AddAppContainerProfile(
+//    package_name, true);
 
-    if (result == SBOX_ERROR_UNSUPPORTED)
-    {
-      std::wcout << L"AppContainer profile is not supported" << std::endl;
-      result = SBOX_ALL_OK;
-    }
+//  if (result == SBOX_ERROR_UNSUPPORTED)
+//  {
+//    std::wcout << L"AppContainer profile is not supported" << std::endl;
+//    result = SBOX_ALL_OK;
+//  }
 
     if (result != SBOX_ALL_OK)
       break;
@@ -242,7 +242,7 @@ ResultCode SetupNamedPipeRules(scoped_refptr<TargetPolicy> target_policy,
   return result;
 }
 
-bool Initialize(const algo::TargetInitializeOptions* options) {
+bool Initialize() {
 
   std::wcout << L"Broker Services initialize." << std::endl;
   BrokerServices* broker_services = SandboxFactory::GetBrokerServices();
@@ -267,7 +267,7 @@ int Spawn(const algo::TargetOptions* options,
       break;
     }
 
-    const scoped_refptr<TargetPolicy> target_policy
+    scoped_refptr<TargetPolicy> target_policy
         = broker_services->CreatePolicy();
 
     result_code = SetupProtectedMode(target_policy, options->package_name);

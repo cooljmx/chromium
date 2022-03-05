@@ -1,5 +1,7 @@
 #include "algo/win/host/algohost.h"
 
+#include <iostream>
+
 #include <tchar.h>
 #include <windows.h>
 
@@ -15,12 +17,6 @@
 #define PATH_DELIMITER L"\\"
 
 #define HOSTFXR_LIB L"hostfxr.dll"
-
-#define ENDPOINT_DIR L"algohost.netcore"
-#define ENDPOINT_ASM L"cTrader.Automate.Host.NetCore.dll"
-#define ENDPOINT_CONFIG L"cTrader.Automate.Host.NetCore.runtimeconfig.json"
-#define ENDPOINT_TYPE L"cTrader.Automate.Host.NetCore.Endpoint, cTrader.Automate.Host.NetCore"
-#define ENDPOINT_METHOD L"Run"
 
 using string_t = std::basic_string<char_t>;
 
@@ -41,9 +37,15 @@ namespace
     void warmup();
 }
 
+const string_t ENDPOINT_DIR = read_environment_variable(L"ENDPOINT_DIR");
+const string_t ENDPOINT_ASM = read_environment_variable(L"ENDPOINT_ASM");
+const string_t ENDPOINT_CONFIG = read_environment_variable(L"ENDPOINT_CONFIG");
+const string_t ENDPOINT_TYPE = read_environment_variable(L"ENDPOINT_TYPE");
+const string_t ENDPOINT_METHOD = read_environment_variable(L"ENDPOINT_METHOD");
+
 int _tmain(int argc, char_t* argv[])
 {
-  //SleepEx(10000, false);
+  SleepEx(10000, false);
 
   warmup();
 
@@ -51,7 +53,7 @@ int _tmain(int argc, char_t* argv[])
 
   const string_t product_path = read_environment_variable(CT_ENV_VAR_PRODUCT_PATH);
   const string_t dotnet_path = read_environment_variable(CT_ENV_VAR_DOTNET_PATH);
-  const string_t hostfxr_path = read_environment_variable(CT_ENV_VAR_HOSTFXR_PATH);
+  const string_t hostfxr_path = dotnet_path + PATH_DELIMITER + read_environment_variable(CT_ENV_VAR_HOSTFXR_PATH);
 
   const string_t endpoint_dir_path = product_path + PATH_DELIMITER + ENDPOINT_DIR;
   const string_t endpoint_asm_path = endpoint_dir_path + PATH_DELIMITER + ENDPOINT_ASM;
@@ -65,6 +67,8 @@ int _tmain(int argc, char_t* argv[])
 
   if (target_services != nullptr)
       target_services->LowerToken();
+  else
+	  std::cerr << "There is no target services!!!" << std::endl;
 
   load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn =
         get_dotnet_load_assembly(dotnet_path.c_str(), product_path.c_str(), endpoint_config_path.c_str());
@@ -75,8 +79,8 @@ int _tmain(int argc, char_t* argv[])
   component_entry_point_fn entry_point_fn = nullptr;
   if (load_assembly_and_get_function_pointer_fn(
         endpoint_asm_path.c_str(),
-        ENDPOINT_TYPE,
-        ENDPOINT_METHOD,
+        ENDPOINT_TYPE.c_str(),
+        ENDPOINT_METHOD.c_str(),
         nullptr,
         nullptr,
         reinterpret_cast<void**>(&entry_point_fn)) != 0 || entry_point_fn == nullptr)
