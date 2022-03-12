@@ -28,26 +28,26 @@ ResultCode SetupProtectedMode(
     if (result != SBOX_ALL_OK)
       break;
 
-    result = target_policy->SetDelayedIntegrityLevel(INTEGRITY_LEVEL_UNTRUSTED);
-    if (result != SBOX_ALL_OK)
-      break;
+//  result = target_policy->SetDelayedIntegrityLevel(INTEGRITY_LEVEL_UNTRUSTED);
+//  if (result != SBOX_ALL_OK)
+//    break;
 
-    result = target_policy->SetAlternateDesktop(true);
-    if (result != SBOX_ALL_OK)
-      break;
+//  result = target_policy->SetAlternateDesktop(true);
+//  if (result != SBOX_ALL_OK)
+//    break;
 
-    result = target_policy->SetJobLevel(JOB_LOCKDOWN, 0);
-    if (result != SBOX_ALL_OK)
-      break;
+//  result = target_policy->SetJobLevel(JOB_LOCKDOWN, 0);
+//  if (result != SBOX_ALL_OK)
+//    break;
 
-//  result = target_policy->AddAppContainerProfile(
-//    package_name, true);
+  //result = target_policy->AddAppContainerProfile(
+  //  package_name, true);
 
-//  if (result == SBOX_ERROR_UNSUPPORTED)
-//  {
-//    std::wcout << L"AppContainer profile is not supported" << std::endl;
-//    result = SBOX_ALL_OK;
-//  }
+  //if (result == SBOX_ERROR_UNSUPPORTED)
+  //{
+  //  std::wcout << L"AppContainer profile is not supported" << std::endl;
+  //  result = SBOX_ALL_OK;
+  //}
 
     if (result != SBOX_ALL_OK)
       break;

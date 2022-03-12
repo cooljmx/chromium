@@ -10,10 +10,13 @@
 int run_broker_main(int argc, wchar_t** argv);
 
 int _tmain(int argc, wchar_t* argv[]) {
+    Sleep(15 * 1000);
 	if (argc > 1) {
+		std::cerr << "host" << std::endl;
 		return host_main(argc, argv);
 	}
 	else {
+		std::cerr << "broker" << std::endl;
 		return run_broker_main(argc, argv);
 	}
 }
@@ -34,15 +37,16 @@ int run_broker_main(int argc, wchar_t** argv) {
 	algo::TargetInformation* target_result = new algo::TargetInformation;
 	algo::TargetOptions* options = new algo::TargetOptions{
 		host,                                 // host_path
-		L"host",                              // command_line
+		L"exe host",                          // command_line
 		L"test_env",                          // package_name
-		L"c:\\chromium\\src\\out\\x64_algo\\libc++.dll|RW",        // fs_rules
+////////L"C:\\chromium\\src\\out\\testing_app\\testing_app.runtimeconfig.json|RO;"           // fs_rules
+////////L"C:\\Program Files (x86)\\dotnet\\shared\\Microsoft.NETCore.App\\6.0.2\\*|RO;"
+////////L"C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\6.0.2\\*|RO;"
+	    L"C:\\Users\\arttr\\Documents\\out.txt|RW",
 		L"",                                  // reg_rules
 		L"",                                  // np_rules
 		L"",                                  // ev_rules
 	};
-
-	Sleep(15 * 1000);
 
 	Spawn(options, target_result);
 

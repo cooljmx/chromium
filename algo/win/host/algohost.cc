@@ -45,8 +45,6 @@ const string_t ENDPOINT_METHOD = read_environment_variable(L"ENDPOINT_METHOD");
 
 int host_main(int argc, wchar_t* argv[])
 {
-  SleepEx(10000, false);
-
   warmup();
 
   sandbox::TargetServices* target_services = sandbox::SandboxFactory::GetTargetServices();
