@@ -41,7 +41,7 @@
 namespace {
 
 // The standard windows size for one memory page.
-constexpr size_t kOneMemPage = 4096;
+constexpr size_t kOneMemPage = 4096 * 2;
 // The IPC and Policy shared memory sizes.
 constexpr size_t kIPCMemSize = kOneMemPage * 2;
 constexpr size_t kPolMemSize = kOneMemPage * 6;
