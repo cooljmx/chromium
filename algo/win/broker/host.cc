@@ -72,7 +72,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         L"\\??\\C:\\chromium\\src\\out\\testing_app\\*|RO;"
         L"\\??\\C:\\chromium\\src\\out\\x64_algo\\one.netcore.exe|RW;"
         L"\\??\\C:\\chromium\\src\\out\\x86_algo\\one.netcore.exe|RW;"
-        L"\\??\\C:\\Users\\arttr\\Documents\\out.txt|RW"
+        L"\\??\\C:\\Users\\arttr\\Documents\\out.txt|RW;"
         L"\\??\\C:\\Users\\arttr\\Documents|RW",
         L"",                                  // reg_rules
         L"",                                  // np_rules
