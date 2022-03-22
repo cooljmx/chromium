@@ -66,7 +66,7 @@ int host_main(int argc, wchar_t* argv[])
   if (target_services != nullptr)
       target_services->LowerToken();
   else
-	  std::cerr << "There is no target services!!!" << std::endl;
+      std::cerr << "There is no target services!!!" << std::endl;
 
   load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn =
         get_dotnet_load_assembly(dotnet_path.c_str(), product_path.c_str(), endpoint_config_path.c_str());
