@@ -53,6 +53,6 @@ int run_broker_main(int argc, wchar_t** argv) {
             }
         }
     }
-    Sleep(200);
+
     return 0;
 }
