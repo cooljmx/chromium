@@ -36,7 +36,7 @@ int run_broker_main(int argc, wchar_t** argv) {
     }
 
     std::ios_base::sync_with_stdio(false);
-    for (;;;) {
+    for (;;) {
         for (std::string line; std::getline(std::cin, line);) {
             // parse
             algo::TargetInformation* target_result = new algo::TargetInformation;
@@ -61,5 +61,4 @@ int run_broker_main(int argc, wchar_t** argv) {
             }
         }
     }
-    retrun 0;
 }
