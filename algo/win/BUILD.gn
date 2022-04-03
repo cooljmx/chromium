@@ -11,7 +11,21 @@ executable("the_one") {
 
   deps = [
     "//sandbox/win:sandbox",
+  ":copy_tasks",
   ]
 
-  output_name = "one.netcore"
+  output_name = "algohost"
+}
+
+executable("launcher") {
+  sources = [
+    "launcher/launcher.cc",
+  ]
+
+  output_name = "launcher"
+}
+
+copy("copy_tasks") {
+  sources = [ "launcher/task.json" ]
+  outputs = [ "$root_out_dir/task.json" ]
 }
