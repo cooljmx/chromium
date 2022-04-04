@@ -10,8 +10,9 @@ executable("the_one") {
   ]
 
   deps = [
+    "//third_party/abseil-cpp:absl",
     "//sandbox/win:sandbox",
-  ":copy_tasks",
+    ":copy_tasks",
   ]
 
   output_name = "algohost"

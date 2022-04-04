@@ -6,11 +6,13 @@
 
 #include "algo/win/broker/algobroker.h"
 #include "algo/win/host/algohost.h"
+#include "base/json/json_reader.h"
+
 
 int run_broker_main(int argc, wchar_t** argv);
 
 int _tmain(int argc, wchar_t* argv[]) {
-//  Sleep(10 * 1000);
+    Sleep(10 * 1000);
     if (argc > 1) {
         std::cerr << "host" << std::endl;
         return host_main(argc, argv);
@@ -32,7 +34,14 @@ int run_broker_main(int argc, wchar_t** argv) {
 
     std::ios_base::sync_with_stdio(false);
     for (std::string line; std::getline(std::cin, line);) {
-        // parse
+        base::Optional<base::Value> root = base::JSONReader::Read(line);
+        if (!root || root == base::nullopt) {
+            std::cerr << "Bad JSON: " << line << std::endl;
+            continue;
+        }
+        std::string *targetId = root->FindStringKey("targetId");
+        std::cerr << &targetId << std::endl;
+
         algo::TargetInformation* target_result = new algo::TargetInformation;
         algo::TargetOptions* options = new algo::TargetOptions{
             exe,                                              // host_path
