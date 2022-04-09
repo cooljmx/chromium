@@ -148,8 +148,6 @@ int wmain(int argc, LPWSTR* argv) {
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
     std::wcout << buf << std::endl;
-    std::wcout << buf << std::endl;
-    std::wcout.flush();
 
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
