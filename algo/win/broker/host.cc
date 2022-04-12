@@ -58,10 +58,6 @@ const std::wstring get_value(const char* key, const base::Optional<base::Value>&
                 rule += SEMICOLON;
             }
             if (entry.is_dict()) {
-                for (const auto& kv : entry.DictItems()) {
-                    std::cerr << kv.first << " is " << kv.second << std::endl;
-                }
-
                 base::Optional<bool> ro = entry.FindBoolKey(RO);
                 const std::string* const pattern = entry.FindStringKey(PATTERN);
                 assert(pattern);
