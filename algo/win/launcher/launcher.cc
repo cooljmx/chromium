@@ -1,3 +1,4 @@
+#include <conio.h>
 #include <windows.h>
 
 #include <algorithm>
@@ -17,22 +18,22 @@ bool IsWinNT() {
 }
 
 std::string GetLastErrorAsString() {
-	DWORD errorMessageID = ::GetLastError();
-	if (errorMessageID == 0) {
-		return std::string();
-	}
+    DWORD errorMessageID = ::GetLastError();
+    if (errorMessageID == 0) {
+        return std::string();
+    }
 
-	LPSTR messageBuffer = nullptr;
-	size_t size = FormatMessageA(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPSTR)&messageBuffer, 0, NULL);
+    LPSTR messageBuffer = nullptr;
+    size_t size = FormatMessageA(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPSTR)&messageBuffer, 0, NULL);
 
-	std::string message(messageBuffer, size);
-	LocalFree(messageBuffer);
+    std::string message(messageBuffer, size);
+    LocalFree(messageBuffer);
 
-	return message;
+    return message;
 }
 
 int wmain(int argc, LPWSTR* argv) {
@@ -148,6 +149,13 @@ int wmain(int argc, LPWSTR* argv) {
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
     std::wcout << buf << std::endl;
+
+    for (;;) {
+        if (kbhit()) {
+            break;
+        }
+        Sleep(1000);
+    }
 
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
