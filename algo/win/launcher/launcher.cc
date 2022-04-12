@@ -101,7 +101,7 @@ int wmain(int argc, LPWSTR* argv) {
     std::stringstream buffer;
     buffer << t.rdbuf();
     std::string content = buffer.str();
-    std::cerr << "content length is " << content.size() << std::endl;
+    std::cerr << "content length is " << content.size() << std::endl << std::endl;
     std::wstring json_str(content.begin(), content.end());
     std::replace(json_str.begin(), json_str.end(), '\r', ' ');
     std::replace(json_str.begin(), json_str.end(), '\n', ' ');
@@ -150,6 +150,7 @@ int wmain(int argc, LPWSTR* argv) {
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
     std::wcout << buf << std::endl;
 
+    std::cout << "Press any key to finish the launcher process" << std::endl;
     for (;;) {
         if (kbhit()) {
             break;
