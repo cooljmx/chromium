@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <io.h>
 #include <fcntl.h>
 #include <tchar.h>
@@ -11,9 +12,21 @@
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/values.h"
 
 #define TARGET_ID "targetId"
 #define PROCESS_ID "processId"
+#define ARGS "args"
+#define PACKAGE "packageName"
+#define FS_RULES "filesystemRules"
+#define PIPE_RULES "pipeRules"
+#define EVENT_RULES "eventRules"
+#define REG_RULES "registryRules"
+#define PATTERN "pattern"
+#define RO "readOnly"
+#define WIDE_SPACE std::wstring(L" ")
+#define SEMICOLON std::string(";")
+#define PIPE std::string("|")
 
 int run_broker_main(int argc, wchar_t** argv);
 
@@ -27,6 +40,47 @@ int _tmain(int argc, wchar_t* argv[]) {
         std::cerr << "broker" << std::endl;
         return run_broker_main(argc, argv);
     }
+}
+
+const std::wstring get_value(const char* key, const base::Optional<base::Value>& node) {
+    const std::string* const value = node->FindStringKey(key);
+    std::string rule;
+
+    if (value) {
+        rule += *value;
+    }
+    else {
+        const base::Value* list_value = node->FindListKey(key);
+
+        for (const auto& entry : list_value->GetList()) {
+            if (rule.size()) {
+                rule += SEMICOLON;
+            }
+            if (entry.is_dict()) {
+                for (const auto& kv : entry.DictItems()) {
+                    std::cerr << kv.first << " is " << kv.second << std::endl;
+                }
+
+                base::Optional<bool> ro = entry.FindBoolKey(RO);
+                const std::string* const pattern = entry.FindStringKey(PATTERN);
+                assert(pattern);
+                rule += *pattern;
+
+                if (ro) {
+                    rule += PIPE + (ro.value() ? std::string("RO") : std::string("RW"));
+                }
+            }
+            else if (entry.is_string()) {
+                rule += entry.GetString();
+            }
+            else {
+                std::cerr << "unknown type of node" << std::endl;
+            }
+        }
+    }
+
+    std::cerr << key << " is " << rule << std::endl;
+    return std::wstring(rule.begin(), rule.end());
 }
 
 int run_broker_main(int argc, wchar_t** argv) {
@@ -61,21 +115,25 @@ int run_broker_main(int argc, wchar_t** argv) {
             std::cerr << "Bad JSON: " << narrow_line << std::endl;
             continue;
         }
-        const std::string* target_id = root->FindStringKey(TARGET_ID);
-        const auto wide_target = std::wstring(target_id->begin(), target_id->end());
-        std::cerr << "target_id is " << &target_id << std::endl;
-        const auto cmd = std::wstring(L"target, ") + wide_target;
-        // add args
+
+        const auto target = get_value(TARGET_ID, root);
+        const auto args = get_value(ARGS, root);
+        const auto package_name = get_value(PACKAGE, root);
+        const auto fs_rules = get_value(FS_RULES, root);
+        const auto pipe_rules = get_value(PIPE_RULES, root);
+        const auto event_rules = get_value(EVENT_RULES, root);
+        const auto reg_rules = get_value(REG_RULES, root);
+        const auto cmd = std::wstring(L"target, ") + target + WIDE_SPACE + args;
 
         algo::TargetInformation* target_result = new algo::TargetInformation;
         algo::TargetOptions* options = new algo::TargetOptions{
-            exe,               // host_path
-            cmd.c_str(),       // command_line
-            L"test_env",       // package_name
-            L"",               // file rules
-            L"",               // reg_rules
-            L"",               // np_rules
-            L"",               // ev_rules
+            exe,                         // host_path
+            cmd.c_str(),                 // command_line
+            package_name.c_str(),        // package_name
+            fs_rules.c_str(),            // file rules
+            reg_rules.c_str(),           // reg_rules
+            pipe_rules.c_str(),          // np_rules
+            event_rules.c_str(),         // ev_rules
         };
 
         Spawn(options, target_result);
@@ -84,7 +142,7 @@ int run_broker_main(int argc, wchar_t** argv) {
             std::wcerr << target_result->process_id << " " << target_result->thread_id << std::endl;
 
             base::DictionaryValue out_root;
-            out_root.SetString(TARGET_ID, *target_id);
+            out_root.SetString(TARGET_ID, target);
             out_root.SetString(PROCESS_ID, std::to_string(target_result->process_id).c_str());
 
             std::string json_string;
