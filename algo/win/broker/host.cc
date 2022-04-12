@@ -123,7 +123,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         const auto pipe_rules = get_value(PIPE_RULES, root);
         const auto event_rules = get_value(EVENT_RULES, root);
         const auto reg_rules = get_value(REG_RULES, root);
-        const auto cmd = std::wstring(L"target, ") + target + WIDE_SPACE + args;
+        const auto cmd = std::wstring(L"target ") + target + WIDE_SPACE + args;
 
         algo::TargetInformation* target_result = new algo::TargetInformation;
         algo::TargetOptions* options = new algo::TargetOptions{
