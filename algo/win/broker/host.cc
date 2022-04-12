@@ -32,6 +32,7 @@ int run_broker_main(int argc, wchar_t** argv);
 
 int _tmain(int argc, wchar_t* argv[]) {
 //  Sleep(10 * 1000);
+    Sleep(1 * 1000);
     if (argc > 1) {
         std::cerr << "host" << std::endl;
         return host_main(argc, argv);
