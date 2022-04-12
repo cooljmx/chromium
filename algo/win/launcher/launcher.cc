@@ -37,7 +37,7 @@ std::string GetLastErrorAsString() {
 }
 
 int wmain(int argc, LPWSTR* argv) {
-    Sleep(10 * 1000);
+//  Sleep(10 * 1000);
     STARTUPINFO si;
     SECURITY_ATTRIBUTES sa;
     SECURITY_DESCRIPTOR sd;
