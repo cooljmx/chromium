@@ -140,7 +140,7 @@ int run_broker_main(int argc, wchar_t** argv) {
 
             base::DictionaryValue out_root;
             out_root.SetString(TARGET_ID, target);
-            out_root.SetString(PROCESS_ID, target_result->process_id);
+            out_root.SetInteger(PROCESS_ID, target_result->process_id);
 
             std::string json_string;
             base::JSONWriter::Write(out_root, &json_string);
