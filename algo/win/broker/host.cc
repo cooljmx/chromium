@@ -15,6 +15,7 @@
 #include "base/values.h"
 
 #define TARGET_ID "targetId"
+#define RESULT "result"
 #define PROCESS_ID "processId"
 #define ARGS "args"
 #define PACKAGE "packageName"
@@ -133,7 +134,7 @@ int run_broker_main(int argc, wchar_t** argv) {
             event_rules.c_str(),         // ev_rules
         };
 
-        Spawn(options, target_result);
+        int result = Spawn(options, target_result);
 
         if (target_result != nullptr) {
             std::wcerr << target_result->process_id << " " << target_result->thread_id << std::endl;
@@ -141,6 +142,7 @@ int run_broker_main(int argc, wchar_t** argv) {
             base::DictionaryValue out_root;
             out_root.SetString(TARGET_ID, target);
             out_root.SetInteger(PROCESS_ID, target_result->process_id);
+            out_root.SetInteger(RESULT, result);
 
             std::string json_string;
             base::JSONWriter::Write(out_root, &json_string);
