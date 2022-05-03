@@ -42,7 +42,7 @@ int wmain(int argc, LPWSTR* argv) {
     SECURITY_ATTRIBUTES sa;
     SECURITY_DESCRIPTOR sd;
     PROCESS_INFORMATION pi;
-    HANDLE childs_stdin, childs_stdout, read_stdout, write_stdin;
+    HANDLE childs_stdin, childs_stdout, childs_stderr, read_stdout, write_stdin, read_stderr;
 
     if (IsWinNT()) {
         InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
@@ -63,12 +63,21 @@ int wmain(int argc, LPWSTR* argv) {
         CloseHandle(write_stdin);
         return -1;
     }
+    if (!CreatePipe(&read_stderr, &childs_stderr, &sa, 0)) {
+        std::cerr << "Can't create a pipe" << std::endl;
+        CloseHandle(childs_stdin);
+        CloseHandle(write_stdin);
+        CloseHandle(read_stdout);
+        CloseHandle(childs_stdout);
+        return -1;
+    }
 
     GetStartupInfo(&si);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.wShowWindow = SW_HIDE;
     si.hStdOutput = childs_stdout;
     si.hStdInput = childs_stdin;
+    si.hStdError = childs_stderr;
 
     wchar_t out_algo_buffer[MAX_PATH];
     if (!GetModuleFileNameW(nullptr, out_algo_buffer, MAX_PATH)) {
@@ -86,13 +95,17 @@ int wmain(int argc, LPWSTR* argv) {
         cmd = const_cast<LPWSTR>(cmd_str.c_str());
     }
     SetHandleInformation(write_stdin, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(read_stdin, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(read_stderr, HANDLE_FLAG_INHERIT, 0);
 
     if (!CreateProcess(app, cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
         CloseHandle(childs_stdin);
         CloseHandle(childs_stdout);
+        CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
+        CloseHandle(write_stderr);
         return -1;
     }
 
@@ -113,8 +126,10 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't write to pipe: " << GetLastErrorAsString() << std::endl;
         CloseHandle(childs_stdin);
         CloseHandle(childs_stdout);
+        CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
+        CloseHandle(write_stderr);
         return -1;
     }
     WriteFile(write_stdin, L"\r\n", 3, &bytes_read, NULL);
@@ -131,8 +146,10 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't read from pipe: " << GetLastErrorAsString() << std::endl;
         CloseHandle(childs_stdin);
         CloseHandle(childs_stdout);
+        CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
+        CloseHandle(write_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -143,8 +160,10 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't read from pipe: " << GetLastErrorAsString() << std::endl;
         CloseHandle(childs_stdin);
         CloseHandle(childs_stdout);
+        CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
+        CloseHandle(write_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -162,7 +181,9 @@ int wmain(int argc, LPWSTR* argv) {
     CloseHandle(pi.hProcess);
     CloseHandle(childs_stdin);
     CloseHandle(childs_stdout);
+    CloseHandle(childs_stderr);
     CloseHandle(read_stdout);
     CloseHandle(write_stdin);
+    CloseHandle(write_stderr);
     return 0;
 }
