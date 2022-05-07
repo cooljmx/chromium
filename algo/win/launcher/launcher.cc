@@ -1,14 +1,20 @@
 #include <conio.h>
+#include <fcntl.h>
+#include <io.h>
+#include <stdio.h>
 #include <windows.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
-#include <iostream>
 #include <fstream>
+#include <functional>
+#include <iostream>
 #include <string>
 #include <sstream>
+#include <thread>
 
-#define BUF_SIZE (2 << 16)
+#define BUF_SIZE (1L << 16)
 
 bool IsWinNT() {
     OSVERSIONINFO osv;
@@ -34,6 +40,34 @@ std::string GetLastErrorAsString() {
     LocalFree(messageBuffer);
 
     return message;
+}
+
+void process_childs_stderr(HANDLE read_pipe, const std::atomic<bool>& exit_flag) {
+    int fd = _open_osfhandle((intptr_t)read_pipe, _O_TEXT | _O_RDONLY);
+    if (fd == -1)
+    {
+        std::cerr << "_open_osfhandle has failed" << std::endl;
+        return;
+    }
+
+    FILE* f = _fdopen(fd, "r");
+    if (f == NULL)
+    {
+        std::cerr << "_fdopen has failed" << std::endl;
+        return;
+    }
+
+    char buf[100];
+    for (;;) {
+        if (exit_flag) {
+            std::cerr << "Quitting stderr loop" << std::endl;
+            break;
+        }
+		char* line = fgets(buf, 1L << 8, f);
+        if (line) {
+            std::cerr << line << std::endl;
+        }
+    }
 }
 
 int wmain(int argc, LPWSTR* argv) {
@@ -95,8 +129,11 @@ int wmain(int argc, LPWSTR* argv) {
         cmd = const_cast<LPWSTR>(cmd_str.c_str());
     }
     SetHandleInformation(write_stdin, HANDLE_FLAG_INHERIT, 0);
-    SetHandleInformation(read_stdin, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(read_stdout, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(read_stderr, HANDLE_FLAG_INHERIT, 0);
+
+    std::atomic<bool> exit_flag;
+    std::thread process_childs_stderr_thread(process_childs_stderr, read_stderr, std::ref(exit_flag));
 
     if (!CreateProcess(app, cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
@@ -105,7 +142,7 @@ int wmain(int argc, LPWSTR* argv) {
         CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
-        CloseHandle(write_stderr);
+        CloseHandle(read_stderr);
         return -1;
     }
 
@@ -129,7 +166,7 @@ int wmain(int argc, LPWSTR* argv) {
         CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
-        CloseHandle(write_stderr);
+        CloseHandle(read_stderr);
         return -1;
     }
     WriteFile(write_stdin, L"\r\n", 3, &bytes_read, NULL);
@@ -149,7 +186,7 @@ int wmain(int argc, LPWSTR* argv) {
         CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
-        CloseHandle(write_stderr);
+        CloseHandle(read_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -163,7 +200,7 @@ int wmain(int argc, LPWSTR* argv) {
         CloseHandle(childs_stderr);
         CloseHandle(read_stdout);
         CloseHandle(write_stdin);
-        CloseHandle(write_stderr);
+        CloseHandle(read_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -184,6 +221,10 @@ int wmain(int argc, LPWSTR* argv) {
     CloseHandle(childs_stderr);
     CloseHandle(read_stdout);
     CloseHandle(write_stdin);
-    CloseHandle(write_stderr);
+    CloseHandle(read_stderr);
+
+    exit_flag = false;
+    process_childs_stderr_thread.join();
+
     return 0;
 }
