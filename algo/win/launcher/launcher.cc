@@ -16,6 +16,14 @@
 
 #define BUF_SIZE (1L << 16)
 
+struct Defer {
+  std::function<void()> action;
+  Defer(std::function<void()> doLater) : action{doLater} {}
+  ~Defer() {
+    action();
+  }
+};
+
 bool IsWinNT() {
     OSVERSIONINFO osv;
     osv.dwOSVersionInfoSize = sizeof(osv);
@@ -91,20 +99,28 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't create a pipe" << std::endl;
         return -1;
     }
+	Defer child_stdin([&childs_stdin, &write_stdin]() {
+        CloseHandle(childs_stdin);
+        CloseHandle(write_stdin);
+	});
+
     if (!CreatePipe(&read_stdout, &childs_stdout, &sa, 0)) {
         std::cerr << "Can't create a pipe" << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(write_stdin);
         return -1;
     }
+	Defer child_stdout([&childs_stdout, &read_stdout]() {
+        CloseHandle(childs_stdout);
+        CloseHandle(read_stdout);
+	});
+
     if (!CreatePipe(&read_stderr, &childs_stderr, &sa, 0)) {
         std::cerr << "Can't create a pipe" << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(write_stdin);
-        CloseHandle(read_stdout);
-        CloseHandle(childs_stdout);
         return -1;
     }
+	Defer child_stderr([&childs_stderr, &read_stderr]() {
+        CloseHandle(childs_stderr);
+        CloseHandle(read_stderr);
+	});
 
     GetStartupInfo(&si);
     si.dwFlags = STARTF_USESTDHANDLES;
@@ -137,14 +153,12 @@ int wmain(int argc, LPWSTR* argv) {
 
     if (!CreateProcess(app, cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(childs_stdout);
-        CloseHandle(childs_stderr);
-        CloseHandle(read_stdout);
-        CloseHandle(write_stdin);
-        CloseHandle(read_stderr);
         return -1;
     }
+	Defer child_stdin([&childs_stdin, &write_stdin]() {
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	});
 
     const auto algo_base = std::string(host_base.begin(), host_base.end());
     const std::ifstream t(algo_base + std::string("\\task.json"));
@@ -161,12 +175,6 @@ int wmain(int argc, LPWSTR* argv) {
 
     if (!WriteFile(write_stdin, json_str.c_str(), json_str.size() * sizeof(wchar_t), &bytes_written, NULL)) {
         std::cerr << "Can't write to pipe: " << GetLastErrorAsString() << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(childs_stdout);
-        CloseHandle(childs_stderr);
-        CloseHandle(read_stdout);
-        CloseHandle(write_stdin);
-        CloseHandle(read_stderr);
         return -1;
     }
     WriteFile(write_stdin, L"\r\n", 3, &bytes_read, NULL);
@@ -181,12 +189,6 @@ int wmain(int argc, LPWSTR* argv) {
     memset(buf, 0, sizeof(buf));
     if (!ReadFile(read_stdout, buf, BUF_SIZE - 1, &bytes_read, NULL)) {
         std::cerr << "Can't read from pipe: " << GetLastErrorAsString() << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(childs_stdout);
-        CloseHandle(childs_stderr);
-        CloseHandle(read_stdout);
-        CloseHandle(write_stdin);
-        CloseHandle(read_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -195,12 +197,6 @@ int wmain(int argc, LPWSTR* argv) {
     memset(buf, 0, sizeof(buf));
     if (!ReadFile(read_stdout, buf, BUF_SIZE - 1, &bytes_read, NULL)) {
         std::cerr << "Can't read from pipe: " << GetLastErrorAsString() << std::endl;
-        CloseHandle(childs_stdin);
-        CloseHandle(childs_stdout);
-        CloseHandle(childs_stderr);
-        CloseHandle(read_stdout);
-        CloseHandle(write_stdin);
-        CloseHandle(read_stderr);
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
@@ -213,15 +209,6 @@ int wmain(int argc, LPWSTR* argv) {
         }
         Sleep(1000);
     }
-
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-    CloseHandle(childs_stdin);
-    CloseHandle(childs_stdout);
-    CloseHandle(childs_stderr);
-    CloseHandle(read_stdout);
-    CloseHandle(write_stdin);
-    CloseHandle(read_stderr);
 
     exit_flag = false;
     process_childs_stderr_thread.join();
