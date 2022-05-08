@@ -155,7 +155,7 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
         return -1;
     }
-	Defer child_stdin([&childs_stdin, &write_stdin]() {
+	Defer create_proc([&pi]() {
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	});
