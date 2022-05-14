@@ -5,7 +5,6 @@
 #include <windows.h>
 
 #include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <fstream>
 #include <functional>
@@ -15,8 +14,6 @@
 #include <thread>
 
 #define BUF_SIZE (1L << 16)
-
-//d::atomic<bool> exit_flag{false};
 
 struct Defer {
   std::function<void()> action;
@@ -69,10 +66,6 @@ void process_childs_stderr(HANDLE read_pipe) {
 
     char buf[100];
     for (;;) {
-//      if (exit_flag) {
-//          std::cerr << "Quitting stderr loop" << std::endl;
-//          break;
-//      }
 		char* line = fgets(buf, 1L << 8, f);
         if (line) {
             std::cerr << line << std::endl;
@@ -205,15 +198,8 @@ int wmain(int argc, LPWSTR* argv) {
 
     std::cout << "Press Ctrl+C to finish launcher and broker processes" << std::endl;
     for (;;) {
-//      if (kbhit()) {
-//  	    CloseHandle(write_stdin);
-//          break;
-//      }
         Sleep(1000);
     }
-
-//  exit_flag = true;
-//  process_childs_stderr_thread.join();
 
     return 0;
 }
