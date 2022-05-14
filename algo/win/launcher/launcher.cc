@@ -16,6 +16,8 @@
 
 #define BUF_SIZE (1L << 16)
 
+//d::atomic<bool> exit_flag{false};
+
 struct Defer {
   std::function<void()> action;
   Defer(std::function<void()> doLater) : action{doLater} {}
@@ -50,7 +52,7 @@ std::string GetLastErrorAsString() {
     return message;
 }
 
-void process_childs_stderr(HANDLE read_pipe, const std::atomic<bool>& exit_flag) {
+void process_childs_stderr(HANDLE read_pipe) {
     int fd = _open_osfhandle((intptr_t)read_pipe, _O_TEXT | _O_RDONLY);
     if (fd == -1)
     {
@@ -67,10 +69,10 @@ void process_childs_stderr(HANDLE read_pipe, const std::atomic<bool>& exit_flag)
 
     char buf[100];
     for (;;) {
-        if (exit_flag) {
-            std::cerr << "Quitting stderr loop" << std::endl;
-            break;
-        }
+//      if (exit_flag) {
+//          std::cerr << "Quitting stderr loop" << std::endl;
+//          break;
+//      }
 		char* line = fgets(buf, 1L << 8, f);
         if (line) {
             std::cerr << line << std::endl;
@@ -79,7 +81,7 @@ void process_childs_stderr(HANDLE read_pipe, const std::atomic<bool>& exit_flag)
 }
 
 int wmain(int argc, LPWSTR* argv) {
-//  Sleep(10 * 1000);
+    Sleep(10 * 1000);
     STARTUPINFO si;
     SECURITY_ATTRIBUTES sa;
     SECURITY_DESCRIPTOR sd;
@@ -148,8 +150,7 @@ int wmain(int argc, LPWSTR* argv) {
     SetHandleInformation(read_stdout, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(read_stderr, HANDLE_FLAG_INHERIT, 0);
 
-    std::atomic<bool> exit_flag;
-    std::thread process_childs_stderr_thread(process_childs_stderr, read_stderr, std::ref(exit_flag));
+    std::thread process_childs_stderr_thread(process_childs_stderr, read_stderr);
 
     if (!CreateProcess(app, cmd, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi)) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
@@ -202,16 +203,17 @@ int wmain(int argc, LPWSTR* argv) {
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
     std::wcout << buf << std::endl;
 
-    std::cout << "Press any key to finish the launcher process" << std::endl;
+    std::cout << "Press Ctrl+C to finish launcher and broker processes" << std::endl;
     for (;;) {
-        if (kbhit()) {
-            break;
-        }
+//      if (kbhit()) {
+//  	    CloseHandle(write_stdin);
+//          break;
+//      }
         Sleep(1000);
     }
 
-    exit_flag = false;
-    process_childs_stderr_thread.join();
+//  exit_flag = true;
+//  process_childs_stderr_thread.join();
 
     return 0;
 }
