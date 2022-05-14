@@ -66,7 +66,7 @@ void process_childs_stderr(HANDLE read_pipe) {
 
     char buf[100];
     for (;;) {
-		char* line = fgets(buf, 1L << 8, f);
+        char* line = fgets(buf, 1L << 8, f);
         if (line) {
             std::cerr << line << std::endl;
         }
@@ -94,28 +94,28 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't create a pipe" << std::endl;
         return -1;
     }
-	Defer child_stdin([&childs_stdin, &write_stdin]() {
+    Defer child_stdin([&childs_stdin, &write_stdin]() {
         CloseHandle(childs_stdin);
         CloseHandle(write_stdin);
-	});
+    });
 
     if (!CreatePipe(&read_stdout, &childs_stdout, &sa, 0)) {
         std::cerr << "Can't create a pipe" << std::endl;
         return -1;
     }
-	Defer child_stdout([&childs_stdout, &read_stdout]() {
+    Defer child_stdout([&childs_stdout, &read_stdout]() {
         CloseHandle(childs_stdout);
         CloseHandle(read_stdout);
-	});
+    });
 
     if (!CreatePipe(&read_stderr, &childs_stderr, &sa, 0)) {
         std::cerr << "Can't create a pipe" << std::endl;
         return -1;
     }
-	Defer child_stderr([&childs_stderr, &read_stderr]() {
+    Defer child_stderr([&childs_stderr, &read_stderr]() {
         CloseHandle(childs_stderr);
         CloseHandle(read_stderr);
-	});
+    });
 
     GetStartupInfo(&si);
     si.dwFlags = STARTF_USESTDHANDLES;
@@ -149,10 +149,10 @@ int wmain(int argc, LPWSTR* argv) {
         std::cerr << "Can't create a process: " << GetLastErrorAsString() << std::endl;
         return -1;
     }
-	Defer create_proc([&pi]() {
-		CloseHandle(pi.hThread);
-		CloseHandle(pi.hProcess);
-	});
+    Defer create_proc([&pi]() {
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+    });
 
     const auto algo_base = std::string(host_base.begin(), host_base.end());
     const std::ifstream t(algo_base + std::string("\\task.json"));
