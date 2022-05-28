@@ -74,7 +74,7 @@ void process_childs_stderr(HANDLE read_pipe) {
 }
 
 int wmain(int argc, LPWSTR* argv) {
-    Sleep(10 * 1000);
+    //Sleep(10 * 1000);
     STARTUPINFO si;
     SECURITY_ATTRIBUTES sa;
     SECURITY_DESCRIPTOR sd;
@@ -186,6 +186,7 @@ int wmain(int argc, LPWSTR* argv) {
         return -3;
     }
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
+    Sleep(1 * 1000);
     std::wcout << buf << std::endl;
 
     memset(buf, 0, sizeof(buf));
@@ -196,7 +197,7 @@ int wmain(int argc, LPWSTR* argv) {
     std::cerr << "read " << bytes_read << " bytes!" << std::endl;
     std::wcout << buf << std::endl;
 
-    std::cout << "Press Ctrl+C to finish launcher and broker processes" << std::endl;
+    std::cout << "Press Ctrl+C to finish launcher and broker processes" << std::endl << std::endl;
     for (;;) {
         Sleep(1000);
     }

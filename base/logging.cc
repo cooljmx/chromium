@@ -17,6 +17,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <vector>
 
@@ -175,11 +176,11 @@ PathString* g_log_file_name = nullptr;
 FileHandle g_log_file = nullptr;
 
 // What should be prepended to each message?
-bool g_log_process_id = false;
-bool g_log_thread_id = false;
+bool g_log_process_id = true;
+bool g_log_thread_id = true;
 bool g_log_timestamp = true;
 bool g_log_tickcount = false;
-const char* g_log_prefix = nullptr;
+char g_log_prefix[1 << 8] = "broker";
 
 // Should we pop up fatal debug messages in a dialog?
 bool show_error_dialogs = false;
@@ -491,10 +492,16 @@ void SetLogItems(bool enable_process_id, bool enable_thread_id,
   g_log_tickcount = enable_tickcount;
 }
 
-void SetLogPrefix(const char* prefix) {
+extern "C" {
+  __declspec(dllexport) char g_target_id[1 << 8] = {};
+}
+
+void SetLogPrefix(char* prefix) {
   DCHECK(!prefix ||
-         base::ContainsOnlyChars(prefix, "abcdefghijklmnopqrstuvwxyz"));
-  g_log_prefix = prefix;
+         base::ContainsOnlyChars(prefix, "abcdefghijklmnopqrstuvwxyz-"));
+  if (strlen(g_target_id)) {
+    strcpy(prefix, g_target_id);
+  }
 }
 
 void SetShowErrorDialogs(bool enable_dialogs) {
@@ -905,8 +912,8 @@ void LogMessage::Init(const char* file, int line) {
   {
     // TODO(darin): It might be nice if the columns were fixed width.
     stream_ << '[';
-    if (g_log_prefix)
-      stream_ << g_log_prefix << ':';
+    SetLogPrefix(g_log_prefix);
+    stream_ << g_log_prefix << ':';
     if (g_log_process_id)
       stream_ << base::GetUniqueIdForProcess() << ':';
     if (g_log_thread_id)
@@ -916,6 +923,7 @@ void LogMessage::Init(const char* file, int line) {
       SYSTEMTIME local_time;
       GetLocalTime(&local_time);
       stream_ << std::setfill('0')
+              << std::setw(2) << local_time.wYear
               << std::setw(2) << local_time.wMonth
               << std::setw(2) << local_time.wDay
               << '/'

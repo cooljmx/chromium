@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "algo/win/broker/algobroker.h"
+#include "base/logging.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/app_container_profile.h"
@@ -45,7 +46,7 @@ ResultCode SetupProtectedMode(
 
   //if (result == SBOX_ERROR_UNSUPPORTED)
   //{
-  //  std::wcerr << L"AppContainer profile is not supported" << std::endl;
+  //  LOG(INFO) << L"AppContainer profile is not supported" << std::endl;
   //  result = SBOX_ALL_OK;
   //}
 
@@ -62,8 +63,8 @@ ResultCode SpawnTarget(const wchar_t* path,
                        BrokerServices* broker_services,
                        scoped_refptr<TargetPolicy> target_policy,
                        PROCESS_INFORMATION* process_information) {
-  std::wcerr << L"Target path: " << path << std::endl;
-  std::wcerr << L"Target arguments: " << arguments << std::endl;
+  LOG(INFO) << L"Target path: " << path << std::endl;
+  LOG(INFO) << L"Target arguments: " << arguments << std::endl;
 
   ResultCode last_warning = SBOX_ALL_OK;
   DWORD last_error = 0;
@@ -76,7 +77,7 @@ ResultCode SpawnTarget(const wchar_t* path,
                                                          process_information);
   if (result != SBOX_ALL_OK) {
     if (last_warning != SBOX_ALL_OK) {
-      std::wcerr << L"Last warning: " << last_warning << std::endl;
+      LOG(INFO) << L"Last warning: " << last_warning << std::endl;
     }
     if (last_error != 0) {
       LPWSTR messageBuffer = nullptr;
@@ -87,7 +88,7 @@ ResultCode SpawnTarget(const wchar_t* path,
         (LPWSTR)&messageBuffer, 0, nullptr);
 
       const std::wstring message(messageBuffer, size);
-      std::wcerr << L"Last error: " << message.c_str() << std::endl;
+      LOG(INFO) << L"Last error: " << message.c_str() << std::endl;
     }
   }
 
@@ -137,7 +138,7 @@ ResultCode SetupFileRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcerr << L"Rule [FileSystem] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [FileSystem] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -173,7 +174,7 @@ ResultCode SetupRegistryRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcerr << L"Rule [Registry] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Registry] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -209,7 +210,7 @@ ResultCode SetupEventRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcerr << L"Rule [Event] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Event] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -235,7 +236,7 @@ ResultCode SetupNamedPipeRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcerr << L"Rule [NamedPipeSystem] added: " << rule.c_str() << std::
+    LOG(INFO) << L"Rule [NamedPipeSystem] added: " << rule.c_str() << std::
         endl;
   }
 
@@ -244,7 +245,7 @@ ResultCode SetupNamedPipeRules(scoped_refptr<TargetPolicy> target_policy,
 
 bool Initialize() {
 
-  std::wcerr << L"Broker Services initialize." << std::endl;
+  LOG(INFO) << L"Broker Services initialize." << std::endl;
   BrokerServices* broker_services = SandboxFactory::GetBrokerServices();
 
   if (broker_services == nullptr)

@@ -5,12 +5,12 @@
 #include <tchar.h>
 #include <windows.h>
 
-#include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_factory.h"
-
 #include "algo/win/host/coreclr_delegates.h"
 #include "algo/win/host/hostfxr.h"
 #include "algo/win/host/vars.h"
+#include "base/logging.h"
+#include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/sandbox_factory.h"
 
 #define STR_EMPTY L""
 #define STR_DOT L'.'
@@ -58,8 +58,24 @@ const string_t ENDPOINT_TYPE = read_environment_variable(L"ENDPOINT_TYPE");
 const string_t ENDPOINT_METHOD = read_environment_variable(L"ENDPOINT_METHOD");
 const string_t PRELOAD_ENDPOINT_METHOD = read_environment_variable(L"PRELOAD_ENDPOINT_METHOD");
 
+extern "C" {
+  extern __declspec(dllimport) char g_target_id[1 << 8];
+}
+
+void set_target(int argc, wchar_t** argv) {
+  if (argc < 2) {
+    return;
+  }
+
+  const auto target_id = std::wstring(argv[1]);
+  const auto narrow_id = std::string(target_id.begin(), target_id.end());
+  strcpy(g_target_id, narrow_id.c_str());
+}
+
 int host_main(int argc, wchar_t* argv[])
 {
+  set_target(argc, argv);
+  LOG(INFO) << "host" << std::endl;
   warmup();
 
   sandbox::TargetServices* target_services = sandbox::SandboxFactory::GetTargetServices();
@@ -149,7 +165,7 @@ namespace
       if (target_services != nullptr)
           target_services->LowerToken();
       else
-          std::cerr << "There are no target services!!!" << std::endl;
+          LOG(INFO) << "There are no target services!!!" << std::endl;
 
       return entry_point_fn(nullptr, 0);
     }
@@ -161,7 +177,7 @@ namespace
       if (target_services != nullptr)
           target_services->LowerToken();
       else
-          std::cerr << "There are no target services!!!" << std::endl;
+          LOG(INFO) << "There are no target services!!!" << std::endl;
 
       component_entry_point_fn entry_point_fn = nullptr;
       if (load_assembly_and_get_function_pointer_fn(

@@ -11,6 +11,7 @@
 #include "algo/win/host/algohost.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
 
@@ -35,11 +36,9 @@ int _tmain(int argc, wchar_t* argv[]) {
 //  Sleep(10 * 1000);
     Sleep(1 * 1000);
     if (argc > 1) {
-        std::cerr << "host" << std::endl;
         return host_main(argc, argv);
     }
     else {
-        std::cerr << "broker" << std::endl;
         return run_broker_main(argc, argv);
     }
 }
@@ -72,21 +71,22 @@ const std::wstring get_value(const char* key, const base::Optional<base::Value>&
                 rule += entry.GetString();
             }
             else {
-                std::cerr << "unknown type of node" << std::endl;
+                LOG(INFO) << "unknown type of node" << std::endl;
             }
         }
     }
 
-    std::cerr << key << " is " << rule << std::endl;
+    LOG(INFO) << key << " is " << rule << std::endl;
     return std::wstring(rule.begin(), rule.end());
 }
 
 int run_broker_main(int argc, wchar_t** argv) {
     Initialize();
+    LOG(INFO) << "broker" << std::endl;
 
     wchar_t exe[MAX_PATH];
     if (!GetModuleFileNameW(nullptr, exe, MAX_PATH)) {
-        std::cerr << "Get module name has failed: " << GetLastError() << std::endl;
+        LOG(INFO) << "Get module name has failed: " << GetLastError() << std::endl;
         return -1;
     }
 
@@ -96,21 +96,21 @@ int run_broker_main(int argc, wchar_t** argv) {
     const HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
     for (std::string line; std::getline(std::cin, line);) {
-        std::cerr << "line size is " << line.size() << std::endl;
+        LOG(INFO) << "line size is " << line.size() << std::endl;
 
         const auto wline = std::wstring( (wchar_t*)line.data(), line.size() / 2);
-        std::cerr << "wline size is " << wline.size() << std::endl;
+        LOG(INFO) << "wline size is " << wline.size() << std::endl;
 
         std::string output;
         if (!base::UTF16ToUTF8(wline.c_str(), wline.size(), &output)) {
-            std::cerr << "Couldn't convert UTF16 to UTF8" << std::endl;
+            LOG(INFO) << "Couldn't convert UTF16 to UTF8" << std::endl;
             return -2;
         }
 
         const auto& narrow_line = output;
         base::Optional<base::Value> root = base::JSONReader::Read(narrow_line);
         if (!root || root == base::nullopt) {
-            std::cerr << "Bad JSON: " << narrow_line << std::endl;
+            LOG(INFO) << "Bad JSON: " << narrow_line << std::endl;
             continue;
         }
 
@@ -137,7 +137,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         int result = Spawn(options, target_result);
 
         if (target_result != nullptr) {
-            std::wcerr << target_result->process_id << " " << target_result->thread_id << std::endl;
+            LOG(INFO) << target_result->process_id << " " << target_result->thread_id << std::endl;
 
             base::DictionaryValue out_root;
             out_root.SetString(TARGET_ID, target);
@@ -152,13 +152,13 @@ int run_broker_main(int argc, wchar_t** argv) {
 
             unsigned long bytes_written;
             if (!WriteFile(out, wide_json.c_str(), wide_json.size() * sizeof(wchar_t), &bytes_written, NULL)) {
-                std::cerr << "Can't write to pipe" << std::endl;
+                LOG(INFO) << "Can't write to pipe" << std::endl;
                 return -2;
             }
-            std::cerr << bytes_written << " bytes written!" << std::endl;
+            LOG(INFO) << bytes_written << " bytes written!" << std::endl;
 
             if (!Resume(target_result)) {
-                std::cerr << "Resume target has failed" << std::endl;
+                LOG(INFO) << "Resume target has failed" << std::endl;
             }
         }
     }
