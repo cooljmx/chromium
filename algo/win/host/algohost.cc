@@ -51,12 +51,12 @@ namespace
     bool IsWindows10OrGreater();
 }
 
-const string_t ENDPOINT_DIR = read_environment_variable(L"ENDPOINT_DIR");
-const string_t ENDPOINT_ASM = read_environment_variable(L"ENDPOINT_ASM");
-const string_t ENDPOINT_CONFIG = read_environment_variable(L"ENDPOINT_CONFIG");
-const string_t ENDPOINT_TYPE = read_environment_variable(L"ENDPOINT_TYPE");
-const string_t ENDPOINT_METHOD = read_environment_variable(L"ENDPOINT_METHOD");
-const string_t PRELOAD_ENDPOINT_METHOD = read_environment_variable(L"PRELOAD_ENDPOINT_METHOD");
+const string_t ENDPOINT_DIR = read_environment_variable(L"__CT_ALGOHOST___CT_ALGOHOST_ENDPOINT_DIR");
+const string_t ENDPOINT_ASM = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_ASM");
+const string_t ENDPOINT_CONFIG = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_CONFIG");
+const string_t ENDPOINT_TYPE = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_TYPE");
+const string_t ENDPOINT_METHOD = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_METHOD");
+const string_t PRELOAD_ENDPOINT_METHOD = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_PRELOAD_METHOD");
 
 extern "C" {
   extern __declspec(dllimport) char g_target_id[1 << 8];

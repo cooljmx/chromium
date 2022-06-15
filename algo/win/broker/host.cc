@@ -139,7 +139,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         int result = Spawn(options, target_result);
 
         if (target_result != nullptr) {
-            LOG(INFO) << target_result->process_id << " " << target_result->thread_id << std::endl;
+            LOG(INFO) << "launching target with pid " << target_result->process_id << std::endl;
 
             base::DictionaryValue out_root;
             out_root.SetString(TARGET_ID, target);
