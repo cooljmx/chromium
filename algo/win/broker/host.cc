@@ -77,7 +77,9 @@ const std::wstring get_value(const char* key, const base::Optional<base::Value>&
     }
 
     LOG(INFO) << key << " is " << rule << std::endl;
-    return std::wstring(rule.begin(), rule.end());
+    std::wstring output;
+    base::UTF8ToUTF16(rule.c_str(), rule.size(), &output);
+    return output;
 }
 
 int run_broker_main(int argc, wchar_t** argv) {
