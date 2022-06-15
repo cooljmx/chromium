@@ -51,7 +51,7 @@ namespace
     bool IsWindows10OrGreater();
 }
 
-const string_t ENDPOINT_DIR = read_environment_variable(L"__CT_ALGOHOST___CT_ALGOHOST_ENDPOINT_DIR");
+const string_t ENDPOINT_DIR = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_DIR");
 const string_t ENDPOINT_ASM = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_ASM");
 const string_t ENDPOINT_CONFIG = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_CONFIG");
 const string_t ENDPOINT_TYPE = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_TYPE");
@@ -82,7 +82,7 @@ int host_main(int argc, wchar_t* argv[])
 
   const string_t product_path = read_environment_variable(CT_ENV_VAR_PRODUCT_PATH);
   const string_t dotnet_path = read_environment_variable(CT_ENV_VAR_DOTNET_PATH);
-  const string_t hostfxr_path = dotnet_path + PATH_DELIMITER + read_environment_variable(CT_ENV_VAR_HOSTFXR_PATH);
+  const string_t hostfxr_path = read_environment_variable(CT_ENV_VAR_HOSTFXR_PATH);
 
   const string_t endpoint_dir_path = product_path + PATH_DELIMITER + ENDPOINT_DIR;
   const string_t endpoint_asm_path = endpoint_dir_path + PATH_DELIMITER + ENDPOINT_ASM;
