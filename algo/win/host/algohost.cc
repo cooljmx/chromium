@@ -1,26 +1,22 @@
 #include "algo/win/host/algohost.h"
 
+#include <iostream>
+
 #include <tchar.h>
 #include <windows.h>
-
-#include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_factory.h"
 
 #include "algo/win/host/coreclr_delegates.h"
 #include "algo/win/host/hostfxr.h"
 #include "algo/win/host/vars.h"
+#include "base/logging.h"
+#include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/sandbox_factory.h"
 
 #define STR_EMPTY L""
 #define STR_DOT L'.'
 #define PATH_DELIMITER L"\\"
 
 #define HOSTFXR_LIB L"hostfxr.dll"
-
-#define ENDPOINT_DIR L"algohost.netcore"
-#define ENDPOINT_ASM L"cTrader.Automate.Host.NetCore.dll"
-#define ENDPOINT_CONFIG L"cTrader.Automate.Host.NetCore.runtimeconfig.json"
-#define ENDPOINT_TYPE L"cTrader.Automate.Host.NetCore.Endpoint, cTrader.Automate.Host.NetCore"
-#define ENDPOINT_METHOD L"Run"
 
 using string_t = std::basic_string<char_t>;
 
@@ -39,12 +35,47 @@ namespace
     const string_t read_environment_variable(const char_t* name);
 
     void warmup();
+
+    bool preload(load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn,
+                 const char_t* asm_path);
+
+    int start_with_preload(load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn,
+                           const char_t* endpoint_asm_path,
+                           sandbox::TargetServices* target_services);
+
+    int start_without_preload(load_assembly_and_get_function_pointer_fn
+                                     load_assembly_and_get_function_pointer_fn,
+                              const char_t* endpoint_asm_path,
+                              sandbox::TargetServices* target_services);
+
+    bool IsWindows10OrGreater();
 }
 
-int _tmain(int argc, char_t* argv[])
-{
-  //SleepEx(10000, false);
+const string_t ENDPOINT_DIR = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_DIR");
+const string_t ENDPOINT_ASM = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_ASM");
+const string_t ENDPOINT_CONFIG = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_CONFIG");
+const string_t ENDPOINT_TYPE = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_TYPE");
+const string_t ENDPOINT_METHOD = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_METHOD");
+const string_t PRELOAD_ENDPOINT_METHOD = read_environment_variable(L"__CT_ALGOHOST_ENDPOINT_PRELOAD_METHOD");
 
+extern "C" {
+  extern __declspec(dllimport) char g_target_id[1 << 8];
+}
+
+void set_target(int argc, wchar_t** argv) {
+  if (argc < 2) {
+    return;
+  }
+
+  const auto target_id = std::wstring(argv[1]);
+  const auto narrow_id = std::string(target_id.begin(), target_id.end());
+  strcpy(g_target_id, narrow_id.c_str());
+}
+
+int host_main(int argc, wchar_t* argv[])
+{
+  set_target(argc, argv);
+  LOG(INFO) << "host" << std::endl;
   warmup();
 
   sandbox::TargetServices* target_services = sandbox::SandboxFactory::GetTargetServices();
@@ -63,26 +94,20 @@ int _tmain(int argc, char_t* argv[])
   if (!load_hostfxr(hostfxr_path.c_str()))
     return -21;
 
-  if (target_services != nullptr)
-      target_services->LowerToken();
-
   load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn =
         get_dotnet_load_assembly(dotnet_path.c_str(), product_path.c_str(), endpoint_config_path.c_str());
 
   if (load_assembly_and_get_function_pointer_fn == nullptr)
         return ERROR_BAD_ENVIRONMENT;
 
-  component_entry_point_fn entry_point_fn = nullptr;
-  if (load_assembly_and_get_function_pointer_fn(
-        endpoint_asm_path.c_str(),
-        ENDPOINT_TYPE,
-        ENDPOINT_METHOD,
-        nullptr,
-        nullptr,
-        reinterpret_cast<void**>(&entry_point_fn)) != 0 || entry_point_fn == nullptr)
-        return ERROR_BAD_DLL_ENTRYPOINT;
-
-  return entry_point_fn(nullptr, 0);
+  if (IsWindows10OrGreater())
+    return start_without_preload(load_assembly_and_get_function_pointer_fn,
+                                 endpoint_asm_path.c_str(),
+                                 target_services);
+  else
+    return start_with_preload(load_assembly_and_get_function_pointer_fn,
+                              endpoint_asm_path.c_str(),
+                              target_services);
 }
 
 namespace
@@ -100,6 +125,88 @@ namespace
 
       buffer.resize(buffer_size);
       return buffer;
+    }
+
+    bool IsWindows10OrGreater()
+    {
+      double ret = 0.0;
+      NTSTATUS(WINAPI * RtlGetVersion)(LPOSVERSIONINFOEXW);
+      OSVERSIONINFOEXW osInfo;
+
+      *(FARPROC*)&RtlGetVersion =
+          GetProcAddress(GetModuleHandleA("ntdll"), "RtlGetVersion");
+
+      if (NULL != RtlGetVersion) {
+        osInfo.dwOSVersionInfoSize = sizeof(osInfo);
+        RtlGetVersion(&osInfo);
+        ret = (double)osInfo.dwMajorVersion;
+      }
+
+      return osInfo.dwMajorVersion >= 10;
+    }
+
+    int start_with_preload(load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn,
+                           const char_t* endpoint_asm_path,
+                           sandbox::TargetServices* target_services)
+    {
+      if (!preload(load_assembly_and_get_function_pointer_fn, endpoint_asm_path))
+        return ERROR_BAD_DLL_ENTRYPOINT;
+
+      component_entry_point_fn entry_point_fn = nullptr;
+      if (load_assembly_and_get_function_pointer_fn(
+              endpoint_asm_path,
+              ENDPOINT_TYPE.c_str(),
+              ENDPOINT_METHOD.c_str(),
+              nullptr,
+              nullptr,
+              reinterpret_cast<void**>(&entry_point_fn)) != 0 || entry_point_fn == nullptr)
+        return ERROR_BAD_DLL_ENTRYPOINT;
+
+      if (target_services != nullptr)
+          target_services->LowerToken();
+      else
+          LOG(INFO) << "There are no target services!!!" << std::endl;
+
+      return entry_point_fn(nullptr, 0);
+    }
+
+    int start_without_preload(load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer_fn,
+                              const char_t* endpoint_asm_path,
+                              sandbox::TargetServices* target_services)
+    {
+      if (target_services != nullptr)
+          target_services->LowerToken();
+      else
+          LOG(INFO) << "There are no target services!!!" << std::endl;
+
+      component_entry_point_fn entry_point_fn = nullptr;
+      if (load_assembly_and_get_function_pointer_fn(
+              endpoint_asm_path,
+              ENDPOINT_TYPE.c_str(), ENDPOINT_METHOD.c_str(),
+              nullptr,
+              nullptr,
+              reinterpret_cast<void**>(&entry_point_fn)) != 0 || entry_point_fn == nullptr)
+        return ERROR_BAD_DLL_ENTRYPOINT;
+
+      return entry_point_fn(nullptr, 0);
+    }
+
+    bool preload(load_assembly_and_get_function_pointer_fn
+                        load_assembly_and_get_function_pointer_fn,
+                 const char_t* asm_path)
+    {
+      component_entry_point_fn preload_entry_point_fn = nullptr;
+      if (load_assembly_and_get_function_pointer_fn(
+              asm_path,
+              ENDPOINT_TYPE.c_str(),
+              PRELOAD_ENDPOINT_METHOD.c_str(),
+              nullptr,
+              nullptr,
+              reinterpret_cast<void**>(&preload_entry_point_fn)) != 0 || preload_entry_point_fn == nullptr)
+              return false;
+
+      preload_entry_point_fn(nullptr, 0);
+      return true;
     }
 
     void warmup()

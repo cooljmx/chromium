@@ -1,0 +1,39 @@
+{
+  "targetId": "0B90B2ED-7DBA-4FD6-B17E-C47533300557",
+  "args": "--some -additional=args -to /pass",
+  "packageName": "test_env",
+  "filesystemRules": [
+    {
+      "pattern": "\\??\\C:\\chromium\\src\\out\\testing_app\\testing_app.runtimeconfig.json",
+      "readOnly": true
+    },
+    {
+      "pattern": "\\??\\C:\\Program Files (x86)\\dotnet\\host\\fxr\\6.0.1\\hostfxr.dll",
+      "readOnly": true
+    }
+  ],
+  "pipeRules": [
+    "\\\\.\\pipes\\some-pipe-name-1",
+    "\\\\.\\pipes\\some-pipe-name-2"
+  ],
+  "eventRules": [
+    {
+      "pattern": "some-wait-handle-name-1",
+      "readOnly": true
+    },
+    {
+      "pattern": "some-wait-handle-name-2",
+      "readOnly": false
+    }
+  ],
+  "registryRules": [
+    {
+      "pattern": "HKEY_LOCAL_MACHINE\\*",
+      "readOnly": true
+    },
+    {
+      "pattern": "HKEY_CURRENT_USER\\*",
+      "readOnly": false
+    }
+  ]
+}

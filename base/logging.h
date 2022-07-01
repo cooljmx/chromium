@@ -6,6 +6,7 @@
 #define BASE_LOGGING_H_
 
 #include <stddef.h>
+#include <string.h>
 
 #include <cassert>
 #include <cstdint>
@@ -197,7 +198,7 @@ enum : uint32_t {
 #if defined(OS_FUCHSIA) || defined(OS_NACL)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
 #elif defined(OS_WIN)
-  LOG_DEFAULT = LOG_TO_FILE,
+  LOG_DEFAULT = LOG_TO_FILE | LOG_TO_STDERR,
 #elif defined(OS_POSIX)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
 #endif
@@ -314,12 +315,12 @@ BASE_EXPORT void SetLogItems(bool enable_process_id, bool enable_thread_id,
 // and should be a raw string constant. |prefix| must only contain ASCII letters
 // to avoid confusion with PIDs and timestamps. Pass null to remove the prefix.
 // Logging defaults to no prefix.
-BASE_EXPORT void SetLogPrefix(const char* prefix);
+//BASE_EXPORT void SetLogPrefix(const char* prefix);
 
 // Sets whether or not you'd like to see fatal debug messages popped up in
 // a dialog box or not.
 // Dialogs are not shown by default.
-BASE_EXPORT void SetShowErrorDialogs(bool enable_dialogs);
+//BASE_EXPORT void SetShowErrorDialogs(bool enable_dialogs);
 
 // Sets the Log Assert Handler that will be used to notify of check failures.
 // Resets Log Assert Handler on object destruction.

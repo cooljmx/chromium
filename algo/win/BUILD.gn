@@ -1,20 +1,8 @@
-shared_library("broker") {
+executable("the_one") {
   sources = [
-    "broker/algobroker.cc",
     "broker/algobroker.h",
-  ]
-
-  defines = [ "ALGO_BROKER_EXPORTS" ]
-
-  deps = [
-    "//sandbox/win:sandbox",
-  ]
-
-  output_name = "algobroker.netcore"
-}
-
-executable("host") {
-  sources = [
+    "broker/algobroker.cc",
+    "broker/host.cc",
     "host/algohost.cc",
     "host/algohost.h",
     "host/coreclr_delegates.h",
@@ -22,8 +10,23 @@ executable("host") {
   ]
 
   deps = [
+    "//third_party/abseil-cpp:absl",
     "//sandbox/win:sandbox",
+    ":copy_tasks",
   ]
 
-  output_name = "algohost.netcore"
+  output_name = "algohost"
+}
+
+executable("launcher") {
+  sources = [
+    "launcher/launcher.cc",
+  ]
+
+  output_name = "launcher"
+}
+
+copy("copy_tasks") {
+  sources = [ "launcher/task.json" ]
+  outputs = [ "$root_out_dir/task.json" ]
 }

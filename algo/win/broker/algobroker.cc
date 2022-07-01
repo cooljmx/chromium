@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "algo/win/broker/algobroker.h"
+#include "base/logging.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/sandbox_factory.h"
 #include "sandbox/win/src/app_container_profile.h"
@@ -40,14 +41,14 @@ ResultCode SetupProtectedMode(
     if (result != SBOX_ALL_OK)
       break;
 
-    result = target_policy->AddAppContainerProfile(
-      package_name, true);
+  //result = target_policy->AddAppContainerProfile(
+  //  package_name, true);
 
-    if (result == SBOX_ERROR_UNSUPPORTED)
-    {
-      std::wcout << L"AppContainer profile is not supported" << std::endl;
-      result = SBOX_ALL_OK;
-    }
+  //if (result == SBOX_ERROR_UNSUPPORTED)
+  //{
+  //  LOG(INFO) << L"AppContainer profile is not supported" << std::endl;
+  //  result = SBOX_ALL_OK;
+  //}
 
     if (result != SBOX_ALL_OK)
       break;
@@ -62,8 +63,8 @@ ResultCode SpawnTarget(const wchar_t* path,
                        BrokerServices* broker_services,
                        scoped_refptr<TargetPolicy> target_policy,
                        PROCESS_INFORMATION* process_information) {
-  std::wcout << L"Target path: " << path << std::endl;
-  std::wcout << L"Target arguments: " << arguments << std::endl;
+  LOG(INFO) << L"Target path: " << path << std::endl;
+  LOG(INFO) << L"Target arguments: " << arguments << std::endl;
 
   ResultCode last_warning = SBOX_ALL_OK;
   DWORD last_error = 0;
@@ -76,7 +77,7 @@ ResultCode SpawnTarget(const wchar_t* path,
                                                          process_information);
   if (result != SBOX_ALL_OK) {
     if (last_warning != SBOX_ALL_OK) {
-      std::wcout << L"Last warning: " << last_warning << std::endl;
+      LOG(INFO) << L"Last warning: " << last_warning << std::endl;
     }
     if (last_error != 0) {
       LPWSTR messageBuffer = nullptr;
@@ -87,7 +88,7 @@ ResultCode SpawnTarget(const wchar_t* path,
         (LPWSTR)&messageBuffer, 0, nullptr);
 
       const std::wstring message(messageBuffer, size);
-      std::wcout << L"Last error: " << message.c_str() << std::endl;
+      LOG(INFO) << L"Last error: " << message.c_str() << std::endl;
     }
   }
 
@@ -137,7 +138,7 @@ ResultCode SetupFileRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcout << L"Rule [FileSystem] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [FileSystem] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -173,7 +174,7 @@ ResultCode SetupRegistryRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcout << L"Rule [Registry] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Registry] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -209,7 +210,7 @@ ResultCode SetupEventRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcout << L"Rule [Event] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Event] added: " << rule.c_str() << std::endl;
   }
 
   return result;
@@ -235,16 +236,16 @@ ResultCode SetupNamedPipeRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    std::wcout << L"Rule [NamedPipeSystem] added: " << rule.c_str() << std::
+    LOG(INFO) << L"Rule [NamedPipeSystem] added: " << rule.c_str() << std::
         endl;
   }
 
   return result;
 }
 
-bool Initialize(const algo::TargetInitializeOptions* options) {
+bool Initialize() {
 
-  std::wcout << L"Broker Services initialize." << std::endl;
+  LOG(INFO) << L"Broker Services initialize." << std::endl;
   BrokerServices* broker_services = SandboxFactory::GetBrokerServices();
 
   if (broker_services == nullptr)
@@ -267,7 +268,7 @@ int Spawn(const algo::TargetOptions* options,
       break;
     }
 
-    const scoped_refptr<TargetPolicy> target_policy
+    scoped_refptr<TargetPolicy> target_policy
         = broker_services->CreatePolicy();
 
     result_code = SetupProtectedMode(target_policy, options->package_name);

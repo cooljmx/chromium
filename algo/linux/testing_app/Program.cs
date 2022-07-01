@@ -33,6 +33,22 @@ namespace testing_app
 
         public static int ReverseLine(IntPtr arg, int argLength)
         {
+			bool windows = System.OperatingSystem.IsWindows();
+			if (windows)
+			{
+				var hello = "Hello world from dotnet on Windows!!!";
+				Console.WriteLine(hello);
+
+				var doc_folder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+				var out_path = Path.Combine(doc_folder, "out.txt");
+				var out_file = new FileInfo(out_path);
+                FileStream writable_stream2 = out_file.OpenWrite();
+                var writer2 = new StreamWriter(writable_stream2, Encoding.ASCII);
+                writer2.Write(hello);
+                writer2.Flush();
+                writable_stream2.Close();
+				return 0;
+			}
             Console.WriteLine("Now please open a new shell and run ./algo/linux/pipes_test.sh");
             Console.WriteLine();
 
@@ -57,7 +73,6 @@ namespace testing_app
                 readable_stream.Close();
                 writable_stream.Close();
             }
-            return 0;
         }
 
         static void Main(string[] args)

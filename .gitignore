@@ -66,6 +66,9 @@ vs-chromium-project.txt
 /.externalToolBuilders/
 /.settings/
 /.vs/
+algo/win/.vs/
+sandbox/win/.vs/
+*.htm
 # Visual Studio Code
 .vscode/
 /_out
