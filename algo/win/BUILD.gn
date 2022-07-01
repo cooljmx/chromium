@@ -1,3 +1,12 @@
+import("//build/config/win/manifest.gni")
+
+windows_manifest("algo_exe_manifest") {
+    sources = [
+       as_invoker_manifest,
+       default_compatibility_manifest,
+    ]
+}
+
 executable("the_one") {
   sources = [
     "broker/algobroker.h",
@@ -13,6 +22,7 @@ executable("the_one") {
     "//third_party/abseil-cpp:absl",
     "//sandbox/win:sandbox",
     ":copy_tasks",
+    "//algo/win:algo_exe_manifest",
   ]
 
   output_name = "algohost"
