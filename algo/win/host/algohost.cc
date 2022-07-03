@@ -78,6 +78,11 @@ int host_main(int argc, wchar_t* argv[])
   LOG(INFO) << "host" << std::endl;
   warmup();
 
+  SetEnvironmentVariable(L"DOTNET_gcServer", L"1");
+  SetEnvironmentVariable(L"DOTNET_gcConcurrent", L"1");
+  SetEnvironmentVariable(L"DOTNET_GCCpuGroup", L"1");
+  SetEnvironmentVariable(L"DOTNET_Thread_UseAllCpuGroups", L"1");
+
   sandbox::TargetServices* target_services = sandbox::SandboxFactory::GetTargetServices();
 
   const string_t product_path = read_environment_variable(CT_ENV_VAR_PRODUCT_PATH);
