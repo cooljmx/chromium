@@ -27,7 +27,6 @@
 #define PATTERN "pattern"
 #define RO "readOnly"
 #define WIDE_SPACE std::wstring(L" ")
-#define SEMICOLON std::string(";")
 #define PIPE std::string("|")
 
 int run_broker_main(int argc, wchar_t** argv);
@@ -55,7 +54,7 @@ const std::wstring get_value(const char* key, const base::Optional<base::Value>&
 
         for (const auto& entry : list_value->GetList()) {
             if (rule.size()) {
-                rule += SEMICOLON;
+                rule += PIPE;
             }
             if (entry.is_dict()) {
                 base::Optional<bool> ro = entry.FindBoolKey(RO);

@@ -119,13 +119,18 @@ ResultCode SetupFileRules(scoped_refptr<TargetPolicy> target_policy,
   if (rules_string.length() == 0)
     return result;
 
-  std::vector<std::wstring> rules_array = SplitString(rules_string, L';');
+  std::vector<std::wstring> rules_array = SplitString(rules_string, L'|');
 
-  for (std::wstring rule : rules_array) {
-    std::vector<std::wstring> rule_desc = SplitString(rule, '|');
+  const auto rules_array_size = rules_array.size();
+  if (rules_array.size() % 2 != 0) {
+    LOG(INFO) << L"File rules are not correct: " << rules_string.c_str() << std::endl;
+    return SBOX_ERROR_BAD_PARAMS;
+  }
 
-    auto rule_path = rule_desc[0];
-    if (rule_desc.size() > 1 && rule_desc[1] == L"RW") {
+  for (size_t i = 0; i < rules_array_size; i += 2) {
+    auto rule_path = rules_array[i];
+    auto rule_sem = rules_array[i+1];
+    if (rule_sem == L"RW") {
       result = target_policy->AddRule(TargetPolicy::SubSystem::SUBSYS_FILES,
                                       TargetPolicy::Semantics::FILES_ALLOW_ANY,
                                       rule_path.c_str());
@@ -138,7 +143,7 @@ ResultCode SetupFileRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    LOG(INFO) << L"Rule [FileSystem] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [FileSystem] added: " << rule_path.c_str() << std::endl;
   }
 
   return result;
@@ -155,13 +160,18 @@ ResultCode SetupRegistryRules(scoped_refptr<TargetPolicy> target_policy,
   if (rules_string.length() == 0)
     return result;
 
-  std::vector<std::wstring> rules_array = SplitString(rules_string, L';');
+  std::vector<std::wstring> rules_array = SplitString(rules_string, L'|');
 
-  for (std::wstring rule : rules_array) {
-    std::vector<std::wstring> rule_desc = SplitString(rule, '|');
+  const auto rules_array_size = rules_array.size();
+  if (rules_array.size() % 2 != 0) {
+    LOG(INFO) << L"Registry rules are not correct: " << rules_string.c_str() << std::endl;
+    return SBOX_ERROR_BAD_PARAMS;
+  }
 
-    auto rule_path = rule_desc[0];
-    if (rule_desc.size() > 1 && rule_desc[1] == L"RW") {
+  for (size_t i = 0; i < rules_array_size; i += 2) {
+    auto rule_path = rules_array[i];
+    auto rule_sem = rules_array[i+1];
+    if (rule_sem == L"RW") {
       result = target_policy->AddRule(TargetPolicy::SubSystem::SUBSYS_REGISTRY,
                                       TargetPolicy::Semantics::REG_ALLOW_ANY,
                                       rule_path.c_str());
@@ -174,7 +184,7 @@ ResultCode SetupRegistryRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    LOG(INFO) << L"Rule [Registry] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Registry] added: " << rule_path.c_str() << std::endl;
   }
 
   return result;
@@ -191,13 +201,18 @@ ResultCode SetupEventRules(scoped_refptr<TargetPolicy> target_policy,
   if (rules_string.length() == 0)
     return result;
 
-  std::vector<std::wstring> rules_array = SplitString(rules_string, L';');
+  std::vector<std::wstring> rules_array = SplitString(rules_string, L'|');
 
-  for (std::wstring rule : rules_array) {
-    std::vector<std::wstring> rule_desc = SplitString(rule, '|');
+  const auto rules_array_size = rules_array.size();
+  if (rules_array.size() % 2 != 0) {
+    LOG(INFO) << L"Event rules are not correct: " << rules_string.c_str() << std::endl;
+    return SBOX_ERROR_BAD_PARAMS;
+  }
 
-    auto rule_path = rule_desc[0];
-    if (rule_desc.size() > 1 && rule_desc[1] == L"RW") {
+  for (size_t i = 0; i < rules_array_size; i += 2) {
+    auto rule_path = rules_array[i];
+    auto rule_sem = rules_array[i+1];
+    if (rule_sem == L"RW") {
       result = target_policy->AddRule(TargetPolicy::SubSystem::SUBSYS_SYNC,
                                       TargetPolicy::Semantics::EVENTS_ALLOW_ANY,
                                       rule_path.c_str());
@@ -210,7 +225,7 @@ ResultCode SetupEventRules(scoped_refptr<TargetPolicy> target_policy,
     if (result != SBOX_ALL_OK)
       break;
 
-    LOG(INFO) << L"Rule [Event] added: " << rule.c_str() << std::endl;
+    LOG(INFO) << L"Rule [Event] added: " << rule_path.c_str() << std::endl;
   }
 
   return result;
@@ -227,7 +242,7 @@ ResultCode SetupNamedPipeRules(scoped_refptr<TargetPolicy> target_policy,
   if (rules_string.length() == 0)
     return result;
 
-  std::vector<std::wstring> rules_array = SplitString(rules_string, L';');
+  std::vector<std::wstring> rules_array = SplitString(rules_string, L'|');
 
   for (std::wstring rule : rules_array) {
     result = target_policy->AddRule(TargetPolicy::SubSystem::SUBSYS_NAMED_PIPES,
