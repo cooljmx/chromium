@@ -497,8 +497,6 @@ extern "C" {
 }
 
 void SetLogPrefix(char* prefix) {
-  DCHECK(!prefix ||
-         base::ContainsOnlyChars(prefix, "abcdefghijklmnopqrstuvwxyz-"));
   if (strlen(g_target_id)) {
     strcpy(prefix, g_target_id);
   }
