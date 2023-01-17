@@ -15,17 +15,6 @@ namespace {
 #if defined(_M_X64)
 #pragma pack(push, 1)
 
-const ULONG kMmovR10EcxMovEax = 0xB8D18B4C;
-const USHORT kSyscall = 0x050F;
-const BYTE kRetNp = 0xC3;
-const ULONG64 kMov1 = 0x54894808244C8948;
-const ULONG64 kMov2 = 0x4C182444894C1024;
-const ULONG kMov3 = 0x20244C89;
-const USHORT kTestByte = 0x04F6;
-const BYTE kPtr = 0x25;
-const BYTE kRet = 0xC3;
-const USHORT kJne = 0x0375;
-
 // Service code for 64 bit systems.
 struct ServiceEntry {
   // This struct contains roughly the following code:
@@ -103,36 +92,6 @@ struct ServiceFullThunk {
 };
 
 #pragma pack(pop)
-
-bool IsService(const void* source) {
-  const ServiceEntry* service = reinterpret_cast<const ServiceEntry*>(source);
-
-  return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
-          kSyscall == service->syscall && kRetNp == service->ret);
-}
-
-bool IsServiceW8(const void* source) {
-  const ServiceEntryW8* service =
-      reinterpret_cast<const ServiceEntryW8*>(source);
-
-  return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
-          kMov1 == service->mov_1 && kMov2 == service->mov_2 &&
-          kMov3 == service->mov_3);
-}
-
-bool IsServiceWithInt2E(const void* source) {
-  const ServiceEntryWithInt2E* service =
-      reinterpret_cast<const ServiceEntryWithInt2E*>(source);
-
-  return (kMmovR10EcxMovEax == service->mov_r10_rcx_mov_eax &&
-          kTestByte == service->test_byte && kPtr == service->ptr &&
-          kJne == service->jne_over_syscall && kSyscall == service->syscall &&
-          kRet == service->ret && kRet == service->ret2);
-}
-
-bool IsAnyService(const void* source) {
-  return IsService(source) || IsServiceW8(source) || IsServiceWithInt2E(source);
-}
 
 #elif defined(_M_ARM64)
 #pragma pack(push, 4)
@@ -238,9 +197,6 @@ bool ServiceResolverThunk::IsFunctionAService(void* local_thunk) const {
     return false;
 
   if (sizeof(function_code) != read)
-    return false;
-
-  if (!IsAnyService(&function_code))
     return false;
 
   // Save the verified code.
