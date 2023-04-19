@@ -140,6 +140,7 @@ TargetProcess::~TargetProcess() {
 ResultCode TargetProcess::Create(
     const wchar_t* exe_path,
     const wchar_t* command_line,
+    const wchar_t* current_directory,
     std::unique_ptr<StartupInformationHelper> startup_info_helper,
     base::win::ScopedProcessInformation* target_info,
     DWORD* win_error) {
@@ -171,7 +172,7 @@ ResultCode TargetProcess::Create(
                               nullptr,  // No thread attribute.
                               inherit_handles, flags,
                               nullptr,  // Use the environment of the caller.
-                              nullptr,  // Use current directory of the caller.
+                              current_directory,
                               startup_info->startup_info(),
                               &temp_process_info)) {
     *win_error = ::GetLastError();

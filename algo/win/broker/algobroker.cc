@@ -60,6 +60,7 @@ ResultCode SetupProtectedMode(
 
 ResultCode SpawnTarget(const wchar_t* path,
                        const wchar_t* arguments,
+                       const wchar_t* current_directory,
                        BrokerServices* broker_services,
                        scoped_refptr<TargetPolicy> target_policy,
                        PROCESS_INFORMATION* process_information) {
@@ -71,6 +72,7 @@ ResultCode SpawnTarget(const wchar_t* path,
 
   const ResultCode result = broker_services->SpawnTarget(path,
                                                          arguments,
+                                                         current_directory,
                                                          target_policy,
                                                          &last_warning,
                                                          &last_error,
@@ -313,6 +315,7 @@ int Spawn(const algo::TargetOptions* options,
 
     result_code = SpawnTarget(options->host_path,
                               options->command_line,
+                              options->current_directory,
                               broker_services, target_policy,
                               &process_information);
 

@@ -16,6 +16,7 @@
 #include "base/values.h"
 
 #define TITLE "title"
+#define CURRENT_DIRECTORY "currentDirectory"
 #define TARGET_ID "targetId"
 #define RESULT "result"
 #define PROCESS_ID "processId"
@@ -117,6 +118,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         }
 
         const auto title = get_value(TITLE, root);
+        const auto current_directory = get_value(CURRENT_DIRECTORY, root);
         const auto target = get_value(TARGET_ID, root);
         const auto args = get_value(ARGS, root);
         const auto package_name = get_value(PACKAGE, root);
@@ -131,6 +133,7 @@ int run_broker_main(int argc, wchar_t** argv) {
         algo::TargetOptions* options = new algo::TargetOptions{
             exe,                         // host_path
             cmd.c_str(),                 // command_line
+            current_directory.c_str(),
             package_name.c_str(),        // package_name
             fs_rules.c_str(),            // file rules
             reg_rules.c_str(),           // reg_rules

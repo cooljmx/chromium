@@ -393,6 +393,7 @@ DWORD WINAPI BrokerServicesBase::TargetEventsThread(PVOID param) {
 // process inside the sandbox.
 ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
                                            const wchar_t* command_line,
+                                           const wchar_t* current_directory,
                                            scoped_refptr<TargetPolicy> policy,
                                            ResultCode* last_warning,
                                            DWORD* last_error,
@@ -495,7 +496,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
       thread_pool_.get(),
       profile ? profile->GetImpersonationCapabilities() : std::vector<Sid>());
 
-  result = target->Create(exe_path, command_line, std::move(startup_info),
+  result = target->Create(exe_path, command_line, current_directory, std::move(startup_info),
                           &process_info, last_error);
 
   if (result != SBOX_ALL_OK) {
