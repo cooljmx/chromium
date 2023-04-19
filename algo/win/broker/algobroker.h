@@ -12,6 +12,7 @@ namespace algo {
 struct TargetOptions {
   const wchar_t* host_path;
   const wchar_t* command_line;
+  const wchar_t* current_directory;
   const wchar_t* package_name;
   const wchar_t* fs_rules;
   const wchar_t* reg_rules;

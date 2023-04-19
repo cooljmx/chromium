@@ -43,6 +43,7 @@ class BrokerServicesBase final : public BrokerServices,
   scoped_refptr<TargetPolicy> CreatePolicy() override;
   ResultCode SpawnTarget(const wchar_t* exe_path,
                          const wchar_t* command_line,
+                         const wchar_t* current_directory,
                          scoped_refptr<TargetPolicy> policy,
                          ResultCode* last_warning,
                          DWORD* last_error,

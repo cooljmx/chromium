@@ -89,6 +89,7 @@ class BrokerServices {
   //   ALL_OK if successful. All other return values imply failure.
   virtual ResultCode SpawnTarget(const wchar_t* exe_path,
                                  const wchar_t* command_line,
+                                 const wchar_t* current_directory,
                                  scoped_refptr<TargetPolicy> policy,
                                  ResultCode* last_warning,
                                  DWORD* last_error,
